@@ -1,7 +1,6 @@
 import numpy as np
 
 import matplotlib.pyplot as plt
-import matplotlib.patches as patches
 
 from scipy.spatial import Voronoi, voronoi_plot_2d
 import scipy.sparse as sp
@@ -50,22 +49,21 @@ def PolyMesher(Domain, NElem, MaxIter, P=None):
 
         if NElem <= 2000:
             PolyMshr_PlotMsh(Node, Element, NElem)
-            
 
+    Node, Element = PolyMshr_ExtrNds(Node, Element[:NElem])
 
-    Node, Element = PolyMshr_ExtrNds(NElem, Node, Element)
-
+    Node, Element = PolyMshr_CllpsEdgs(Node, Element, 0.1)
 
     # to be fixed:
-    # Node, Element = PolyMshr_CllpsEdgs(Node, Element, NElem, 0.1)
-   
     # Node, Element = PolyMshr_RsqsNds(Node, Element, NElem)
 
-    # BC = Domain('BC',[Node, Element])
-    # Supp = BC[0]
-    # Load = BC[1]
+    BC = Domain('BC',[Node, Element])
+    Supp = BC[0]
+    Load = BC[1]
 
-    PolyMshr_PlotMsh(Node, Element, NElem)
+    PolyMshr_PlotMsh(Node, Element, NElem, wait=True)
+    
+    return Node, Element, Supp, Load, P
 
 
 def PolyMshr_RndPtSet(NElem, Domain):
@@ -152,45 +150,39 @@ def PolyMshr_CntrdPly(Element, Node, NElem):
     return np.array(centroids), np.array(areas)
 
 
-def PolyMshr_ExtrNds(NElem, Node0, Element0):
-    unique_nodes = np.unique(np.concatenate(Element0[:NElem]))
-    cNode = np.arange(0, Node0.shape[0])
+def PolyMshr_ExtrNds(Node0, Element0):
+    unique_nodes = np.unique(np.concatenate(Element0))
+    cNode = np.arange(len(Node0))
     cNode[~np.in1d(cNode, unique_nodes)] = np.max(unique_nodes)
-    Node, Element = PolyMshr_RbldLists(Node0, Element0[:NElem], cNode)
+    Node, Element = PolyMshr_RbldLists(Node0, Element0, cNode)
     return Node, Element
 
 
-def PolyMshr_CllpsEdgs(Node0, Element0, NElem, Tol):
+def PolyMshr_CllpsEdgs(Node0, Element0, Tol):
     while True:
         cEdge = []
-        for el in range(len(Element0)):
-            if len(Element0[el]) < 4:
+        for ele in Element0:
+            if len(ele) < 4:
                 continue  # Cannot collapse triangles
-
-            vx = Node0[Element0[el], 0]
-            vy = Node0[Element0[el], 1]
+            vx = Node0[ele, 0]
+            vy = Node0[ele, 1]
             nv = len(vx)
-
             beta = np.arctan2(vy - np.sum(vy) / nv, vx - np.sum(vx) / nv)
-            beta = np.mod(beta - np.roll(beta, shift=1), 2 * np.pi)
-            betaIdeal = 2 * np.pi / len(Element0[el])
-
-            Edge = np.column_stack((Element0[el], np.roll(Element0[el], shift=-1)))
-            selected_edges = Edge[beta < Tol * betaIdeal]
-            selected_edges = np.unique(np.sort(selected_edges, axis=1), axis=0)
-
-            cEdge.extend(selected_edges.tolist())  # Convert to list and extend
+            beta = np.mod(
+                beta[np.roll(np.arange(len(beta)), shift=-1)] - beta, 2 * np.pi
+            )
+            beta_ideal = 2 * np.pi / len(ele)
+            Edge = np.column_stack((ele, np.roll(ele, shift=-1)))
+            cEdge.extend(Edge[beta < Tol * beta_ideal, :])
 
         if len(cEdge) == 0:
             break
 
-        cEdge = np.array(cEdge)  # Convert back to NumPy array
-        cNode = np.arange(0, Node0.shape[0])
+        cEdge = np.unique(np.sort(cEdge, axis=1), axis=0)
+        cNode = np.arange(len(Node0))
         for i in range(cEdge.shape[0]):
-            cNode[cEdge[i, 1] - 1] = cNode[cEdge[i, 0] - 1]
-
+            cNode[cEdge[i, 1]] = cNode[cEdge[i, 0]]
         Node0, Element0 = PolyMshr_RbldLists(Node0, Element0, cNode)
-
     return Node0, Element0
 
 
@@ -225,46 +217,39 @@ def PolyMshr_RsqsNds(Node0, Element0, NElem):
 
 
 def PolyMshr_RbldLists(Node0, Element0, cNode):
-    unique_cNode, unique_indices, jx = np.unique(
-        cNode, return_index=True, return_inverse=True
-    )
+    Element = [None] * len(Element0)
+    _, ix, jx = np.unique(cNode, return_index=True, return_inverse=True)
 
-    if Node0.shape[0] > len(unique_cNode):
-        unique_cNode[-1] = max(cNode)
+    if not np.array_equal(jx.shape, cNode.shape):
+        jx = jx.T
 
-    # unsort unique_cNode
-    # unique_cNode = [cNode[index] for index in sorted(unique_indices)]
+    if Node0.shape[0] > len(ix):
+        ix[-1] = max(cNode)
 
-    Node = Node0[unique_cNode]
+    Node = Node0[ix]
 
-    Element = []
-    for el in range(len(Element0)):
-        unique_elements = np.unique(jx[Element0[el]])
-        if len(unique_elements) == 0:
-            continue
-        vx = Node[unique_elements, 0]
-        vy = Node[unique_elements, 1]
+    for ind, ele in enumerate(Element0):
+        Element[ind] = np.unique(jx[ele])
+        vx = Node[Element[ind], 0]
+        vy = Node[Element[ind], 1]
         nv = len(vx)
-        sorted_indices = np.argsort(
-            np.arctan2(vy - np.sum(vy) / nv, vx - np.sum(vx) / nv)
-        )
-        Element.append(unique_elements[sorted_indices])
+        angles = np.arctan2(vy - np.sum(vy) / nv, vx - np.sum(vx) / nv)
+        iix = np.argsort(angles)
+        Element[ind] = Element[ind][iix]
 
     return Node, Element
 
 
-def PolyMshr_PlotMsh(Node, Element, NElem, Supp=None, Load=None):
+def PolyMshr_PlotMsh(Node, Element, NElem, Supp=None, Load=None, wait=False):
     plt.clf()
 
     Element = Element[:NElem]
     Node_set = set()
     for polygon in Element:
-        vx = [Node[i,0] for i in polygon]
-        vy = [Node[i,1] for i in polygon]
+        vx = [Node[i, 0] for i in polygon]
+        vy = [Node[i, 1] for i in polygon]
         Node_set.update(polygon)
-        plt.fill(
-            vx,vy,'-w', edgecolor="black"
-        )
+        plt.fill(vx, vy, "-w", edgecolor="black")
 
     Node_set = Node[list(Node_set)]
     plt.plot(Node_set[:, 0], Node_set[:, 1], "bo", markersize=8)
@@ -275,5 +260,8 @@ def PolyMshr_PlotMsh(Node, Element, NElem, Supp=None, Load=None):
     if Load is not None and len(Load) > 0:  # Plot Load BC if specified
         plt.plot(Node[Load[:, 0], 0], Node[Load[:, 0], 1], "m^", markersize=8)
 
-    plt.show(block=False)
-    plt.pause(3e-1)
+    if not wait:
+        plt.show(block=False)
+        plt.pause(3e-1)
+    else:
+        plt.show()
