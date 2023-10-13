@@ -84,7 +84,6 @@ This part explains how to install and use this package.
 
 _to be added_
 
-
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- USAGE EXAMPLES -->
