@@ -26,16 +26,13 @@ def PolyMesher(Domain, NElem, MaxIter, P=None):
         R_P = PolyMshr_Rflct(P, NElem, Domain, Alpha)
         P, R_P = PolyMshr_FixedPoints(P, R_P, PFix)
 
-        vor = Voronoi(np.vstack((P, R_P)), qhull_options="Qx")
+        vor = Voronoi(np.vstack((P, R_P)))
         # fig = voronoi_plot_2d(vor)
         # plt.show()
         Node = vor.vertices
 
-        # Thanks to https://stackoverflow.com/a/59106066/8576938
-        sorting = [
-            np.where(vor.point_region == x)[0][0] for x in range(1, len(vor.regions))
-        ]
-        Element = [x for _, x in sorted(zip(sorting, vor.regions[1:]))]
+        # Reordering regions based on points
+        Element = [vor.regions[reg] for reg in vor.point_region]
 
         Pc, A = PolyMshr_CntrdPly(Element, Node, NElem)
         Area = np.sum(np.abs(A))
@@ -129,7 +126,7 @@ def PolyMshr_CntrdPly(Element, Node, NElem):
     counter = 0
     for vertices in Element:
         if counter >= NElem:
-            continue
+            break
         if -1 in vertices:
             continue
         if len(vertices) >= 3:
