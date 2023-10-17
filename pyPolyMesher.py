@@ -54,12 +54,12 @@ def PolyMesher(Domain, NElem, MaxIter, P=None):
     # to be fixed:
     # Node, Element = PolyMshr_RsqsNds(Node, Element, NElem)
 
-    BC = Domain('BC',[Node, Element])
+    BC = Domain("BC", [Node, Element])
     Supp = BC[0]
     Load = BC[1]
 
     PolyMshr_PlotMsh(Node, Element, NElem, wait=True)
-    
+
     return Node, Element, Supp, Load, P
 
 
@@ -133,15 +133,23 @@ def PolyMshr_CntrdPly(Element, Node, NElem):
             # Extract the vertex coordinates
             polygon_vertices = Node[vertices]
 
+            # Compute the area of the polygon using the shoelace formula
+            vx = polygon_vertices[:, 0]
+            vy = polygon_vertices[:, 1]
+            vxs = np.roll(vx, 1)
+            vys = np.roll(vy, 1)
+            temp = vx * vys - vy * vxs
+            area = 0.5 * np.sum(temp)
+            areas.append(area)
+
             # Compute the centroid of the polygon
-            centroid = np.mean(polygon_vertices, axis=0)
+            centroid = (
+                1
+                / (6 * area)
+                * np.array([np.sum((vx + vxs) * temp), np.sum((vy + vys) * temp)])
+            )
             centroids.append(centroid)
 
-            # Compute the area of the polygon using the shoelace formula
-            x = polygon_vertices[:, 0]
-            y = polygon_vertices[:, 1]
-            area = 0.5 * np.abs(np.dot(x, np.roll(y, 1)) - np.dot(y, np.roll(x, 1)))
-            areas.append(area)
             counter += 1
 
     return np.array(centroids), np.array(areas)
