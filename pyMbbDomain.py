@@ -38,7 +38,8 @@ def BndryCnds(Node, Element, BdBox):
     Supp[:, 0] = FixedNodes
     Supp[:-1, 1] = 1
     Supp[-1, 2] = 1
-    Load = [LeftUpperNode, 0, -0.5]
+    Load = np.zeros((1, 3))
+    Load[0,0], Load[0,1], Load[0,2] = LeftUpperNode[0], 0, -0.5 
     x = [Supp, Load]
     return x
 

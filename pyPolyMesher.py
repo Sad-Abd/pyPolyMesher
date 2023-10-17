@@ -58,7 +58,7 @@ def PolyMesher(Domain, NElem, MaxIter, P=None):
     Supp = BC[0]
     Load = BC[1]
 
-    PolyMshr_PlotMsh(Node, Element, NElem, wait=True)
+    PolyMshr_PlotMsh(Node, Element, NElem, Supp, Load, wait=True)
 
     return Node, Element, Supp, Load, P
 
@@ -257,13 +257,14 @@ def PolyMshr_PlotMsh(Node, Element, NElem, Supp=None, Load=None, wait=False):
         plt.fill(vx, vy, "-w", edgecolor="black")
 
     Node_set = Node[list(Node_set)]
-    plt.plot(Node_set[:, 0], Node_set[:, 1], "bo", markersize=8)
+    plt.plot(Node_set[:, 0], Node_set[:, 1], "bo", markersize=4)
 
     if Supp is not None and len(Supp) > 0:  # Plot Supp BC if specified
-        plt.plot(Node[Supp[:, 0], 0], Node[Supp[:, 0], 1], "b>", markersize=8)
+        plt.scatter(Node[Supp[:, 0], 0], Node[Supp[:, 0], 1],s = [100.]*Supp.shape[0], marker=">")
+
 
     if Load is not None and len(Load) > 0:  # Plot Load BC if specified
-        plt.plot(Node[Load[:, 0], 0], Node[Load[:, 0], 1], "m^", markersize=8)
+        plt.scatter(Node[int(Load[:, 0]), 0], Node[int(Load[:, 0]), 1],s = [100.]*Load.shape[0], marker="^")
 
     if not wait:
         plt.show(block=False)
