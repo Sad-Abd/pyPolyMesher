@@ -1,5 +1,4 @@
 import numpy as np
-from pyMbbDomain import MbbDomain
 from pyPolyMesher import PolyMesher
 
 
@@ -28,4 +27,19 @@ from pyPolyMesher import PolyMesher
 # PolyMesher(MbbDomain, 10, 50, P)
 
 # for unstructured mesh
-PolyMesher(MbbDomain, 50, 100)
+
+# from pyMbbDomain import MbbDomain
+# PolyMesher(MbbDomain, 50, 100)
+
+# from pyHornDomain import HornDomain
+# PolyMesher(HornDomain,150,50)
+
+# from pyWrenchDomain import WrenchDomain
+# PolyMesher(WrenchDomain,150,100)
+
+# Example with Fixed Points
+# from pyMichellDomain import MichellDomain
+# PolyMesher(MichellDomain,20,100)
+
+from pySuspensionDomain import SuspensionDomain
+PolyMesher(SuspensionDomain,750,150)
