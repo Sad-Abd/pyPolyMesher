@@ -34,12 +34,12 @@ def BndryCnds(Node, Element, BdBox):
     Supp = np.ones((RightCircleNodes.shape[0], 3), dtype=int)
     Supp[:, 0] = RightCircleNodes
     LeftHalfCircleNodes = np.where(np.abs(np.maximum(np.sqrt(Node[:, 0] ** 2 + Node[:, 1] ** 2) - 0.175, Node[:, 1])) < eps)[0]
-    Load = -0.1 * np.ones((LeftHalfCircleNodes.shape[0], 3), dtype=int)
+    Load = -0.1 * np.ones((LeftHalfCircleNodes.shape[0], 3))
     Load[:, 0] = LeftHalfCircleNodes
     Load[:, 1] = 0
-    x = [Supp, Load]
+    x = [Supp, np.array(Load)]
     return x
 
 def FixedPoints(BdBox):
     PFix = []
-    return PFix
+    return np.array(PFix)
