@@ -84,16 +84,14 @@ def PolyMshr_RndPtSet(NElem, Domain):
 def PolyMshr_FixedPoints(P, R_P, PFix):
     PP = np.vstack((P, R_P))
     for i in range(PFix.shape[0]):
-        B = np.argsort(
-            np.sqrt((PP[:, 0] - PFix[i, 0]) ** 2 + (PP[:, 1] - PFix[i, 1]) ** 2)
-        )
+        B, I = np.sort(np.sqrt((PP[:, 0] - PFix[i, 0]) ** 2 + (PP[:, 1] - PFix[i, 1]) ** 2)), np.argsort(np.sqrt((PP[:, 0] - PFix[i, 0]) ** 2 + (PP[:, 1] - PFix[i, 1]) ** 2))
         for j in range(1, 4):
-            n = PP[B[j], :] - PFix[i, :]
+            n = PP[I[j], :] - PFix[i, :]
             n = n / np.linalg.norm(n)
-            PP[B[j], :] = PP[B[j], :] - n * (B[j] - B[0])
-
-    P = PP[0 : P.shape[0], :]
-    R_P = PP[P.shape[0] :, :]
+            PP[I[j], :] = PP[I[j], :] - n * (B[j] - B[0])
+    
+    P = PP[:P.shape[0], :]
+    R_P = PP[P.shape[0]:, :]
     return P, R_P
 
 
@@ -264,7 +262,7 @@ def PolyMshr_PlotMsh(Node, Element, NElem, Supp=None, Load=None, wait=False):
 
 
     if Load is not None and len(Load) > 0:  # Plot Load BC if specified
-        plt.scatter(Node[int(Load[:, 0]), 0], Node[int(Load[:, 0]), 1],s = [100.]*Load.shape[0], marker="^")
+        plt.scatter(Node[Load[:, 0].astype(int), 0], Node[Load[:, 0].astype(int), 1],s = [100.]*Load.shape[0], marker="^")
 
     if not wait:
         plt.show(block=False)
