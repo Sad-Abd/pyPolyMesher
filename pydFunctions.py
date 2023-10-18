@@ -22,8 +22,8 @@ def dIntersect(d1, d2):
 def dLine(P, x1, y1, x2, y2):
     a = np.array([x2 - x1, y2 - y1])
     a = a / np.linalg.norm(a)
-    b = P[:, 0:2] - np.array([x1, y1])
-    d = np.dot(b, np.array([-a[1], a[0]]))
+    b = P - np.array([x1, y1])
+    d = np.dot(b, np.array([a[1], -a[0]]))
     d = np.column_stack((d, d))
     return d
 
