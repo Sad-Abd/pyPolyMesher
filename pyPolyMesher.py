@@ -1,27 +1,68 @@
+"""
+PolyMesher Module
+
+This module provides functions for generating polygon meshes using Lloyd's algorithm. 
+The generated polygon meshes are suitable for various computational geometry and finite element analysis applications.
+
+Functions:
+    - PolyMesher(Domain, NElem, MaxIter, P=None): Perform polygon mesh generation using Lloyd's algorithm.
+    - PolyMshr_RndPtSet(NElem, Domain): Generate an initial random point set of size 'NElem' for polygon mesh generation.
+    - PolyMshr_FixedPoints(P, R_P, PFix): Adjust points based on fixed points to maintain mesh quality.
+    - PolyMshr_Rflct(P, NElem, Domain, Alpha): Reflect points at the boundary for mesh generation.
+    - PolyMshr_CntrdPly(Element, Node, NElem): Compute centroids and areas for elements in the mesh.
+    - PolyMshr_ExtrNds(Node0, Element0): Extract unique nodes and rebuild node and element lists.
+    - PolyMshr_CllpsEdgs(Node0, Element0, Tol): Collapse small edges based on a specified tolerance.
+    - PolyMshr_RsqsNds(Node0, Element0, NElem): Rearrange nodes to improve mesh quality using (RCM) algorithm.
+    - PolyMshr_RbldLists(Node0, Element0, cNode): Rebuild node and element lists based on node mapping.
+    - PolyMshr_PlotMsh(Node, Element, NElem, Supp=None, Load=None, wait=False): Plot the polygon mesh with optional boundary conditions.
+
+These functions can be used for polygon mesh generation in computational 
+geometry applications. For more detailed information on each function, refer to their individual
+docstrings.
+
+
+Notes:
+- These function names have been chosen to align with corresponding functions in
+  MATLAB, both as a mark of respect and loyalty to the authors of the reference code and
+  to make the transition from MATLAB to this code as seamless as possible for users.
+"""
+
 import numpy as np
-
 import matplotlib.pyplot as plt
-
 from scipy.spatial import Voronoi, voronoi_plot_2d
 import scipy.sparse as sp
 
 
 def PolyMesher(Domain, NElem, MaxIter, P=None):
+    """
+    Perform polygon mesh generation using Lloyd's algorithm.
+
+    Args:
+        Domain (function): The domain in which the mesh is generated.
+        NElem (int): The desired number of elements in the mesh.
+        MaxIter (int): The maximum number of iterations for mesh generation.
+        P (numpy.ndarray): The initial point set (optional).
+
+    Returns:
+        tuple: A tuple containing Node, Element, Supp, Load, and P.
+    """
     if P is None:
         P = PolyMshr_RndPtSet(NElem, Domain)
 
     NElem = P.shape[0]
-    Tol = 5e-6
+    Tol = 5e-6  # user defined tolerance for small edges
     It = 0
     Err = 1
-    c = 1.5
+    c = 1.5  # constant of proportionality used for calculation of 'Alpha' should be greater than 1
     BdBox = Domain("BdBox")
     PFix = Domain("PFix")
     Area = (BdBox[1] - BdBox[0]) * (BdBox[3] - BdBox[2])
     Pc = P.copy()
 
     while It <= MaxIter and Err > Tol:
-        Alpha = c * np.sqrt(Area / NElem)
+        Alpha = c * np.sqrt(
+            Area / NElem
+        )  # a distance value proportional to the width of an element
         P = Pc.copy()
         R_P = PolyMshr_Rflct(P, NElem, Domain, Alpha)
         P, R_P = PolyMshr_FixedPoints(P, R_P, PFix)
@@ -64,6 +105,16 @@ def PolyMesher(Domain, NElem, MaxIter, P=None):
 
 
 def PolyMshr_RndPtSet(NElem, Domain):
+    """
+    Generate an initial random point set of size 'NElem' for polygon mesh generation.
+
+    Args:
+        NElem (int): The number of points to generate.
+        Domain (function): The domain in which points are generated.
+
+    Returns:
+        numpy.ndarray: A 2D array containing the generated points.
+    """
     P = np.zeros((NElem, 2))
     BdBox = Domain("BdBox")
     Ctr = 0
@@ -82,24 +133,53 @@ def PolyMshr_RndPtSet(NElem, Domain):
 
 
 def PolyMshr_FixedPoints(P, R_P, PFix):
+    """
+    Adjust points based on fixed points to maintain mesh quality.
+
+    Args:
+        P (numpy.ndarray): Original points.
+        R_P (numpy.ndarray): Reflected points.
+        PFix (numpy.ndarray): Fixed points.
+
+    Returns:
+        tuple: A tuple containing adjusted points P and R_P.
+    """
     PP = np.vstack((P, R_P))
     for i in range(PFix.shape[0]):
-        B, I = np.sort(np.sqrt((PP[:, 0] - PFix[i, 0]) ** 2 + (PP[:, 1] - PFix[i, 1]) ** 2)), np.argsort(np.sqrt((PP[:, 0] - PFix[i, 0]) ** 2 + (PP[:, 1] - PFix[i, 1]) ** 2))
+        B, I = np.sort(
+            np.sqrt((PP[:, 0] - PFix[i, 0]) ** 2 + (PP[:, 1] - PFix[i, 1]) ** 2)
+        ), np.argsort(
+            np.sqrt((PP[:, 0] - PFix[i, 0]) ** 2 + (PP[:, 1] - PFix[i, 1]) ** 2)
+        )
         for j in range(1, 4):
             n = PP[I[j], :] - PFix[i, :]
             n = n / np.linalg.norm(n)
             PP[I[j], :] = PP[I[j], :] - n * (B[j] - B[0])
-    
-    P = PP[:P.shape[0], :]
-    R_P = PP[P.shape[0]:, :]
+
+    P = PP[: P.shape[0], :]
+    R_P = PP[P.shape[0] :, :]
     return P, R_P
 
 
 def PolyMshr_Rflct(P, NElem, Domain, Alpha):
-    eps = 1e-8
-    eta = 0.9
+    """
+    Reflect points at the boundary for mesh generation.
+
+    Args:
+        P (numpy.ndarray): Original points.
+        NElem (int): Number of elements.
+        Domain (function): The domain for boundary checks.
+        Alpha (float): The propotional distance value.
+
+    Returns:
+        numpy.ndarray: Reflected points.
+    """
+    eps = 1e-8  # Small positive number for numerical differentiation
+    eta = 0.9  # A specified parameter (0<eta<1) to adjust for numerical errors (round-off and numerical differentiation)
     d = Domain("Dist", P)
     NBdrySegs = d.shape[1] - 1
+
+    # The gradient of the distance function is computed by means of numerical differentiation
     n1 = ((Domain("Dist", P + np.array([[eps, 0]] * NElem))) - d) / eps
     n2 = ((Domain("Dist", P + np.array([[0, eps]] * NElem))) - d) / eps
     I = np.abs(d[:, 0:NBdrySegs]) < Alpha
@@ -119,6 +199,17 @@ def PolyMshr_Rflct(P, NElem, Domain, Alpha):
 
 
 def PolyMshr_CntrdPly(Element, Node, NElem):
+    """
+    Compute centroids and areas for elements in the mesh.
+
+    Args:
+        Element (list): List of element vertices.
+        Node (numpy.ndarray): Node coordinates.
+        NElem (int): Number of elements to consider.
+
+    Returns:
+        tuple: A tuple containing centroids and areas.
+    """
     centroids = []
     areas = []
     counter = 0
@@ -154,6 +245,16 @@ def PolyMshr_CntrdPly(Element, Node, NElem):
 
 
 def PolyMshr_ExtrNds(Node0, Element0):
+    """
+    Extract unique nodes and rebuild node and element lists.
+
+    Args:
+        Node0 (numpy.ndarray): Original node coordinates.
+        Element0 (list): List of element vertices.
+
+    Returns:
+        tuple: A tuple containing updated Node and Element.
+    """
     unique_nodes = np.unique(np.concatenate(Element0))
     cNode = np.arange(len(Node0))
     cNode[~np.in1d(cNode, unique_nodes)] = np.max(unique_nodes)
@@ -162,6 +263,17 @@ def PolyMshr_ExtrNds(Node0, Element0):
 
 
 def PolyMshr_CllpsEdgs(Node0, Element0, Tol):
+    """
+    Collapse small edges based on a specified tolerance.
+
+    Args:
+        Node0 (numpy.ndarray): Node coordinates.
+        Element0 (list): List of element vertices.
+        Tol (float): Tolerance for edge collapse.
+
+    Returns:
+        tuple: A tuple containing updated Node and Element.
+    """
     while True:
         cEdge = []
         for ele in Element0:
@@ -190,6 +302,17 @@ def PolyMshr_CllpsEdgs(Node0, Element0, Tol):
 
 
 def PolyMshr_RsqsNds(Node0, Element0, NElem):
+    """
+    Rearrange nodes to improve mesh quality using (RCM) algorithm.
+
+    Args:
+        Node0 (numpy.ndarray): Original node coordinates.
+        Element0 (list): List of element vertices.
+        NElem (int): Number of elements to consider.
+
+    Returns:
+        tuple: A tuple containing updated Node and Element.
+    """
     NNode0 = Node0.shape[0]
     NElem0 = len(Element0)
 
@@ -220,6 +343,17 @@ def PolyMshr_RsqsNds(Node0, Element0, NElem):
 
 
 def PolyMshr_RbldLists(Node0, Element0, cNode):
+    """
+    Rebuild node and element lists based on node mapping.
+
+    Args:
+        Node0 (numpy.ndarray): Original node coordinates.
+        Element0 (list): List of element vertices.
+        cNode (numpy.ndarray): Node mapping.
+
+    Returns:
+        tuple: A tuple containing updated Node and Element.
+    """
     Element = [None] * len(Element0)
     _, ix, jx = np.unique(cNode, return_index=True, return_inverse=True)
 
@@ -244,6 +378,20 @@ def PolyMshr_RbldLists(Node0, Element0, cNode):
 
 
 def PolyMshr_PlotMsh(Node, Element, NElem, Supp=None, Load=None, wait=False):
+    """
+    Plot the polygon mesh with optional boundary conditions.
+
+    Args:
+        Node (numpy.ndarray): Node coordinates.
+        Element (list): List of element vertices.
+        NElem (int): Number of elements to consider.
+        Supp (numpy.ndarray): Boundary support conditions (optional).
+        Load (numpy.ndarray): Boundary loads (optional).
+        wait (bool): Flag to pause for user interaction.
+
+    Returns:
+        None
+    """
     plt.clf()
 
     Element = Element[:NElem]
@@ -258,11 +406,20 @@ def PolyMshr_PlotMsh(Node, Element, NElem, Supp=None, Load=None, wait=False):
     plt.plot(Node_set[:, 0], Node_set[:, 1], "bo", markersize=4)
 
     if Supp is not None and len(Supp) > 0:  # Plot Supp BC if specified
-        plt.scatter(Node[Supp[:, 0], 0], Node[Supp[:, 0], 1],s = [100.]*Supp.shape[0], marker=">")
-
+        plt.scatter(
+            Node[Supp[:, 0], 0],
+            Node[Supp[:, 0], 1],
+            s=[100.0] * Supp.shape[0],
+            marker=">",
+        )
 
     if Load is not None and len(Load) > 0:  # Plot Load BC if specified
-        plt.scatter(Node[Load[:, 0].astype(int), 0], Node[Load[:, 0].astype(int), 1],s = [100.]*Load.shape[0], marker="^")
+        plt.scatter(
+            Node[Load[:, 0].astype(int), 0],
+            Node[Load[:, 0].astype(int), 1],
+            s=[100.0] * Load.shape[0],
+            marker="^",
+        )
 
     if not wait:
         plt.show(block=False)
