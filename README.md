@@ -93,7 +93,26 @@ _to be added_
 <!-- ROADMAP -->
 ## Roadmap
 
-See the [open issues](https://github.com/Sad-Abd/qtreemesh/issues) for a full list of proposed features (and known issues).
+### Section 1 - Current Focus and Issue Resolution
+
+1. ~~Translate other domain codes.~~
+2. Add docstrings and comments to the following files:
+   - ~~pyPolyMesher~~
+   - ~~pydFunction~~
+   - Domains
+3. Make the resequence function work properly ([Issue #3](https://github.com/Sad-Abd/pyPolyMesher/issues/3)).
+### Section 2 - Upcoming Priorities
+1. Transform Domain definitions into classes using Object-Oriented Programming (OOP) principles.
+2. Rethink the file hierarchy and user experience.
+3. Add some example meshes to the **README**.
+4. Enhance the **README** with more detailed information.
+5. Publish the package on *PYPI* and *Zenodo* for wider distribution.
+
+### Section 3 - Vision and Future Prospects
+1. Develop a GUI for domain definition to improve user interaction.
+2. Explore and brainstorm alternative options for domain definition and future possible expansions.
+
+See the [open issues](https://github.com/Sad-Abd/pyPolyMesher/issues) for a full list of proposed features (and known issues).
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
