@@ -48,9 +48,6 @@
     <li><a href="#usage">Usage</a>
       <ol>
         <li><a href="#1.-read-image">Read Image</a></li>
-        <li><a href="#2.-preprocessing">Preprocessing</a></li>
-        <li><a href="#3.-quadTree-algorithm">QuadTree Algorithm</a></li>
-        <li><a href="#4.-mesh-generation">Mesh Generation</a></li>
       </ol>
     </li>
     <li><a href="#roadmap">Roadmap</a></li>
