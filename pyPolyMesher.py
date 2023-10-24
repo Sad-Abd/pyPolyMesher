@@ -30,7 +30,7 @@ Notes:
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.spatial import Voronoi, voronoi_plot_2d
-import scipy.sparse as sp
+from scipy.sparse import csr_matrix,csgraph
 
 
 def PolyMesher(Domain, NElem, MaxIter, P=None):
@@ -92,8 +92,7 @@ def PolyMesher(Domain, NElem, MaxIter, P=None):
 
     Node, Element = PolyMshr_CllpsEdgs(Node, Element, 0.1)
 
-    # to be fixed:
-    # Node, Element = PolyMshr_RsqsNds(Node, Element, NElem)
+    Node, Element = PolyMshr_RsqsNds(Node, Element, NElem)
 
     BC = Domain("BC", [Node, Element])
     Supp = BC[0]
@@ -331,8 +330,8 @@ def PolyMshr_RsqsNds(Node0, Element0, NElem):
         j[ElemSet] = np.kron(eNode, np.ones(ElemLnght[el], dtype=int))
         index += ElemLnght[el] ** 2
 
-    K = sp.csr_matrix((s, (i, j)), shape=(NNode0, NNode0))
-    p = sp.csgraph.reverse_cuthill_mckee(K)
+    K = csr_matrix((s, (i, j)), shape=(NNode0, NNode0))
+    p = csgraph.reverse_cuthill_mckee(K)
 
     cNode = np.arange(0, NNode0)
     cNode[p[:NNode0]] = np.arange(0, NNode0)

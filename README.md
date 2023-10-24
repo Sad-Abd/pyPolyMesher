@@ -100,7 +100,7 @@ _to be added_
    - ~~pyPolyMesher~~
    - ~~pydFunction~~
    - Domains
-3. Make the resequence function work properly ([Issue #3](https://github.com/Sad-Abd/pyPolyMesher/issues/3)).
+3. ~~Make the resequence function work properly ([Issue #3](https://github.com/Sad-Abd/pyPolyMesher/issues/3)).~~
 ### Section 2 - Upcoming Priorities
 1. Transform Domain definitions into classes using Object-Oriented Programming (OOP) principles.
 2. Rethink the file hierarchy and user experience.
