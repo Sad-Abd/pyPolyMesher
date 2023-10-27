@@ -41,5 +41,8 @@ from pyPolyMesher import PolyMesher
 # from pyMichellDomain import MichellDomain
 # PolyMesher(MichellDomain,20,100)
 
-from pySuspensionDomain import SuspensionDomain
-PolyMesher(SuspensionDomain,750,150)
+# from pySuspensionDomain import SuspensionDomain
+# PolyMesher(SuspensionDomain,750,150)
+
+from pyCookDomain import CookDomain
+Node, Element, Supp, Load, P = PolyMesher(CookDomain,50,20)
