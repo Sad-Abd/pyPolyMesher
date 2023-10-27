@@ -5,7 +5,7 @@ This module provides functions for generating polygon meshes using Lloyd's algor
 The generated polygon meshes are suitable for various computational geometry and finite element analysis applications.
 
 Functions:
-    - PolyMesher(Domain, NElem, MaxIter, P=None): Perform polygon mesh generation using Lloyd's algorithm.
+    - PolyMesher(Domain, NElem, MaxIter, P=None, anim=False): Perform polygon mesh generation using Lloyd's algorithm.
     - PolyMshr_RndPtSet(NElem, Domain): Generate an initial random point set of size 'NElem' for polygon mesh generation.
     - PolyMshr_FixedPoints(P, R_P, PFix): Adjust points based on fixed points to maintain mesh quality.
     - PolyMshr_Rflct(P, NElem, Domain, Alpha): Reflect points at the boundary for mesh generation.
@@ -33,7 +33,7 @@ from scipy.spatial import Voronoi, voronoi_plot_2d
 from scipy.sparse import csr_matrix,csgraph
 
 
-def PolyMesher(Domain, NElem, MaxIter, P=None):
+def PolyMesher(Domain, NElem, MaxIter, P=None, anim=False):
     """
     Perform polygon mesh generation using Lloyd's algorithm.
 
@@ -42,6 +42,7 @@ def PolyMesher(Domain, NElem, MaxIter, P=None):
         NElem (int): The desired number of elements in the mesh.
         MaxIter (int): The maximum number of iterations for mesh generation.
         P (numpy.ndarray): The initial point set (optional).
+        anim (bool): Whether to animate the mesh generation.
 
     Returns:
         tuple: A tuple containing Node, Element, Supp, Load, and P.
@@ -85,7 +86,7 @@ def PolyMesher(Domain, NElem, MaxIter, P=None):
         print(f"It: {It}   Error: {Err}")
         It += 1
 
-        if NElem <= 2000:
+        if (anim==True) & (NElem <= 2000):
             PolyMshr_PlotMsh(Node, Element, NElem)
 
     Node, Element = PolyMshr_ExtrNds(Node, Element[:NElem])

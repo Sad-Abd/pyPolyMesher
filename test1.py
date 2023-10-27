@@ -32,7 +32,7 @@ from pyPolyMesher import PolyMesher
 # PolyMesher(MbbDomain, 50, 100)
 
 # from pyHornDomain import HornDomain
-# PolyMesher(HornDomain,150,50)
+# PolyMesher(HornDomain,150,50, anim=True)
 
 # from pyWrenchDomain import WrenchDomain
 # PolyMesher(WrenchDomain,150,100)
