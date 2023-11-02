@@ -1,6 +1,6 @@
 import numpy as np
 from pyPolyMesher import *
-from pyExampleDomains import *
+# from pyExampleDomains import *
 
 
 # for structured mesh
@@ -71,8 +71,30 @@ from pyExampleDomains import *
 
 # ---------------------------------------------------------------------------------
 
-BdBox = [0, 48, 0, 60]
-PFix = []
+from pyExampleDomains import CookDomain
+Node, Element, Supp, Load, P = PolyMesher(CookDomain, 50, 500)
 
-cook_domain = CookDomain("Cook Domain", BdBox, PFix)
-Node, Element, Supp, Load, P = PolyMesher(cook_domain, 50, 500)
+# How to mesh a new domain:
+#
+#
+# 1. Define the Bounding Box
+# BdBox = [x0,y0,x1,y1]
+#
+# 2. Create a signed distance function
+# def SDF(P):
+#   # some codes to compute the signed distances of points P from domain edges
+#   # you can use and combine available signed distance functions from pydFunction module
+#   return distances
+#
+# 3. Create a BC rule based on nodes coordinates (optional)
+# def BC(nodes, BdBox):
+#   # some codes to define node numbers for supported and loaded nodes
+#   return [supp, load]
+#
+# 4. Create Domain object
+# from pyPolyMesher import Domain
+# NewDomain = Domain("My New Domain", BdBox, SDF, BC)
+#
+# 5. Generate mesh
+# from pyPolyMesher import PolyMesher
+# Node, Element, Supp, Load, P = PolyMesher(NewDomain, NumberofElements, MaxIterations)
