@@ -4,8 +4,10 @@ from pydFunctions import *
 
 
 class CookDomain(Domain):
-    def compute(self, Demand, Arg=None):
-        BdBox = [0, 48, 0, 60]
+    def __init__(self, name, BdBox, PFix):
+        super().__init__(name, BdBox, PFix)
+
+    def compute(self, Demand, BdBox, Arg=None):
         if Demand == 'Dist':
             x = self.DistFnc(Arg, BdBox)
         elif Demand == 'BC':
@@ -43,8 +45,10 @@ class CookDomain(Domain):
 
 
 class SuspensionDomain(Domain):
-    def compute(self, Demand, Arg=None):
-        BdBox = [-2, 24, -2, 24]
+    def __init__(self, name, BdBox, PFix):
+        super().__init__(name, BdBox, PFix)
+
+    def compute(self, Demand, BdBox, Arg=None):
         if Demand == 'Dist':
             x = self.DistFnc(Arg, BdBox)
         elif Demand == 'BC':
@@ -101,8 +105,10 @@ class SuspensionDomain(Domain):
 
 
 class MichellDomain(Domain):
-    def compute(self, Demand, Arg=None):
-        BdBox = [0, 5, -2, 2]
+    def __init__(self, name, BdBox, PFix):
+        super().__init__(name, BdBox, PFix)
+
+    def compute(self, Demand, BdBox, Arg=None):
         if Demand == 'Dist':
             x = self.DistFnc(Arg, BdBox)
         elif Demand == 'BC':
@@ -140,8 +146,10 @@ class MichellDomain(Domain):
 
 
 class WrenchDomain(Domain):
-    def compute(self, Demand, Arg=None):
-        BdBox = [-0.3, 2.5, -0.5, 0.5]
+    def __init__(self, name, BdBox, PFix):
+        super().__init__(name, BdBox, PFix)
+
+    def compute(self, Demand, BdBox, Arg=None):
         if Demand == 'Dist':
             x = self.DistFnc(Arg, BdBox)
         elif Demand == 'BC':
@@ -188,8 +196,10 @@ class WrenchDomain(Domain):
 
 
 class HornDomain(Domain):
-    def compute(self, Demand, Arg=None):
-        BdBox = [-1, 1, 0, 1]
+    def __init__(self, name, BdBox, PFix):
+        super().__init__(name, BdBox, PFix)
+
+    def compute(self, Demand, BdBox, Arg=None):
         if Demand == 'Dist':
             x = self.DistFnc(Arg, BdBox)
         elif Demand == 'BC':
@@ -217,8 +227,10 @@ class HornDomain(Domain):
 
 
 class MbbDomain(Domain):
-    def compute(self, Demand, Arg=None):
-        BdBox = [0, 3, 0, 1]
+    def __init__(self, name, BdBox, PFix):
+        super().__init__(name, BdBox, PFix)
+
+    def compute(self, Demand, BdBox, Arg=None):
         if Demand == "Dist":
             x = self.DistFnc(Arg, BdBox)
         elif Demand == "BC":

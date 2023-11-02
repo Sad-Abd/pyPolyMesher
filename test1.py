@@ -29,21 +29,21 @@ from pyExampleDomains import *
 
 # for unstructured mesh
 
-# mbb_domain = MbbDomain("Mbb Domain")
+# mbb_domain = MbbDomain("Mbb Domain", [0, 3, 0, 1], [])
 # PolyMesher(mbb_domain, 50, 100)
 
-# horn_domain = HornDomain("Horn Domain")
+# horn_domain = HornDomain("Horn Domain", [-1, 1, 0, 1], [])
 # PolyMesher(horn_domain, 150, 50, anim=True)
 
-# wrench_domain = WrenchDomain("Wrench Domain")
+# wrench_domain = WrenchDomain("Wrench Domain", [-0.3, 2.5, -0.5, 0.5], [])
 # PolyMesher(wrench_domain, 150, 100)
 
 # Example with Fixed Points
-# michell_domain = MichellDomain("Michell Domain")
+# michell_domain = MichellDomain("Michell Domain", [0, 5, -2, 2], [])
 # PolyMesher(michell_domain, 20, 100)
 
-# suspension_domain = SuspensionDomain("Suspension Domain")
+# suspension_domain = SuspensionDomain("Suspension Domain", [-2, 24, -2, 24], [])
 # PolyMesher(suspension_domain, 750, 150)
 
-cook_domain = CookDomain("Cook Domain")
+cook_domain = CookDomain("Cook Domain", [0, 48, 0, 60], [])
 Node, Element, Supp, Load, P = PolyMesher(cook_domain, 50, 20)

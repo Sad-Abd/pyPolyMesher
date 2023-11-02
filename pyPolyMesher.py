@@ -34,10 +34,21 @@ from scipy.sparse import csr_matrix, csgraph
 
 
 class Domain:
-    def __init__(self, name):
+    def __init__(self, name, BdBox, PFix):
         self.name = name
+        self.BdBox = BdBox
+        self.PFix = PFix
 
-    def compute(self, Demand, Arg=None):
+    def compute(self, Demand, BdBox, Arg=None):
+        pass
+
+    def DistFnc(self, P, BdBox):
+        pass
+
+    def BndryCnds(self, Node, Element, BdBox):
+        pass
+
+    def FixedPoints(self, BdBox):
         pass
 
 
@@ -63,8 +74,8 @@ def PolyMesher(Domain, NElem, MaxIter, P=None, anim=False):
     It = 0
     Err = 1
     c = 1.5  # constant of proportionality used for calculation of 'Alpha' should be greater than 1
-    BdBox = Domain.compute("BdBox")
-    PFix = Domain.compute("PFix")
+    BdBox = Domain.compute("BdBox", Domain.BdBox)
+    PFix = Domain.compute("PFix", Domain.BdBox)
     Area = (BdBox[1] - BdBox[0]) * (BdBox[3] - BdBox[2])
     Pc = P.copy()
 
@@ -103,7 +114,7 @@ def PolyMesher(Domain, NElem, MaxIter, P=None, anim=False):
 
     Node, Element = PolyMshr_RsqsNds(Node, Element, NElem)
 
-    BC = Domain.compute("BC", [Node, Element])
+    BC = Domain.compute("BC", Domain.BdBox, [Node, Element])
     Supp = BC[0]
     Load = BC[1]
 
@@ -124,14 +135,14 @@ def PolyMshr_RndPtSet(NElem, Domain):
         numpy.ndarray: A 2D array containing the generated points.
     """
     P = np.zeros((NElem, 2))
-    BdBox = Domain.compute("BdBox")
+    BdBox = Domain.compute("BdBox", Domain.BdBox)
     Ctr = 0
 
     while Ctr < NElem:
         Y = np.random.rand(NElem, 2)
         Y[:, 0] = (BdBox[1] - BdBox[0]) * Y[:, 0] + BdBox[0]
         Y[:, 1] = (BdBox[3] - BdBox[2]) * Y[:, 1] + BdBox[2]
-        d = Domain.compute("Dist", Y)
+        d = Domain.compute("Dist", Domain.BdBox, Y)
         I = np.where(d[:, -1] < 0)[0]
         NumAdded = min(NElem - Ctr, len(I))
         P[Ctr: Ctr + NumAdded, :] = Y[I[0:NumAdded], :]
@@ -187,12 +198,14 @@ def PolyMshr_Rflct(P, NElem, Domain, Alpha):
     eps = 1e-8  # Small positive number for numerical differentiation
     # A specified parameter (0<eta<1) to adjust for numerical errors (round-off and numerical differentiation)
     eta = 0.9
-    d = Domain.compute("Dist", P)
+    d = Domain.compute("Dist", Domain.BdBox, P)
     NBdrySegs = d.shape[1] - 1
 
     # The gradient of the distance function is computed by means of numerical differentiation
-    n1 = ((Domain.compute("Dist", P + np.array([[eps, 0]] * NElem))) - d) / eps
-    n2 = ((Domain.compute("Dist", P + np.array([[0, eps]] * NElem))) - d) / eps
+    n1 = ((Domain.compute("Dist", Domain.BdBox, P +
+          np.array([[eps, 0]] * NElem))) - d) / eps
+    n2 = ((Domain.compute("Dist", Domain.BdBox, P +
+          np.array([[0, eps]] * NElem))) - d) / eps
     I = np.abs(d[:, 0:NBdrySegs]) < Alpha
     P1 = np.broadcast_to(P[:, 0][:, np.newaxis], (P[:, 0].shape[0], NBdrySegs))
     P2 = np.broadcast_to(P[:, 1][:, np.newaxis], (P[:, 1].shape[0], NBdrySegs))
@@ -200,7 +213,7 @@ def PolyMshr_Rflct(P, NElem, Domain, Alpha):
     P1 = P1[I] - 2 * n1[:, 0:NBdrySegs][I] * d[:, 0:NBdrySegs][I]
     P2 = P2[I] - 2 * n2[:, 0:NBdrySegs][I] * d[:, 0:NBdrySegs][I]
     R_P = np.vstack((P1, P2)).T
-    d_R_P = Domain.compute("Dist", R_P)
+    d_R_P = Domain.compute("Dist", Domain.BdBox, R_P)
     J = (np.abs(d_R_P[:, -1]) >= eta * np.abs(d[:, 0:NBdrySegs][I])) & (
         d_R_P[:, -1] > 0
     )
