@@ -34,10 +34,11 @@ from scipy.sparse import csr_matrix, csgraph
 
 
 class Domain:
-    def __init__(self, name, BdBox, PFix):
+    def __init__(self, name, BdBox, PFix, DistFnc):
         self.name = name
         self.BdBox = BdBox
         self.PFix = PFix
+        self.DistFnc = DistFnc
 
     def compute(self, Demand, BdBox, Arg=None):
         pass
@@ -74,8 +75,8 @@ def PolyMesher(Domain, NElem, MaxIter, P=None, anim=False):
     It = 0
     Err = 1
     c = 1.5  # constant of proportionality used for calculation of 'Alpha' should be greater than 1
-    BdBox = Domain.compute("BdBox", Domain.BdBox)
-    PFix = Domain.compute("PFix", Domain.BdBox)
+    BdBox = Domain.BdBox
+    PFix = np.array(Domain.PFix).reshape((-1, 2))
     Area = (BdBox[1] - BdBox[0]) * (BdBox[3] - BdBox[2])
     Pc = P.copy()
 
@@ -135,7 +136,7 @@ def PolyMshr_RndPtSet(NElem, Domain):
         numpy.ndarray: A 2D array containing the generated points.
     """
     P = np.zeros((NElem, 2))
-    BdBox = Domain.compute("BdBox", Domain.BdBox)
+    BdBox = Domain.BdBox
     Ctr = 0
 
     while Ctr < NElem:
