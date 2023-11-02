@@ -4,15 +4,16 @@ from pydFunctions import *
 
 
 class CookDomain(Domain):
-    def __init__(self, name, BdBox, PFix, DistFnc):
-        super().__init__(name, BdBox, PFix, DistFnc)
+    def __init__(self, name, BdBox, PFix,):
+        super().__init__(name, BdBox, PFix)
 
-    def compute(self, Demand, BdBox, Arg=None):
-        if Demand == 'Dist':
-            x = self.DistFnc(Arg, BdBox)
-        elif Demand == 'BC':
-            x = self.BndryCnds(*Arg, BdBox)
-        return x
+    def DistFnc(self, P, BdBox):
+        d1 = dLine(P, 0., 44., 0., 0.)
+        d2 = dLine(P, 0., 0., 48., 44.)
+        d3 = dLine(P, 48., 44., 48., 60.)
+        d4 = dLine(P, 48., 60., 0., 44.)
+        Dist = dIntersect(d4, dIntersect(d3, dIntersect(d2, d1)))
+        return Dist
 
     def BndryCnds(self, Node, Element, BdBox):
         eps = 0.1 * np.sqrt((BdBox[1] - BdBox[0]) *
@@ -29,15 +30,30 @@ class CookDomain(Domain):
 
 
 class SuspensionDomain(Domain):
-    def __init__(self, name, BdBox, PFix, DistFnc):
-        super().__init__(name, BdBox, PFix, DistFnc)
+    def __init__(self, name, BdBox, PFix):
+        super().__init__(name, BdBox, PFix)
 
-    def compute(self, Demand, BdBox, Arg=None):
-        if Demand == 'Dist':
-            x = self.DistFnc(Arg, BdBox)
-        elif Demand == 'BC':
-            x = self.BndryCnds(Arg[0], Arg[1], BdBox)
-        return x
+    def DistFnc(self, P, BdBox):
+        d1 = dRectangle(P, 0, 18.885, 0, 14.56)
+        d2 = dLine(P, 18.885, 1.3030, 4, 0)
+        d3 = dLine(P, 3.92, 14.56, 6.1699, 6.88)
+        d4 = dLine(P, 9.8651, 4.0023, 18.885, 3.70)
+        d5 = dLine(P, 4, 0, 0, 4)
+        d13 = dLine(P, 0, 14, 3.92, 14.56)
+        d14 = dCircle(P, 10, 8, 4)
+        d15 = dLine(P, 9.8651, 4.0023, 6.1699, 6.88)
+        d = dDiff(dDiff(dDiff(dDiff(d1, d2), d5), d13),
+                  dUnion(dDiff(dIntersect(d3, d4), d15), d14))
+        d6 = dCircle(P, 2, 2, 2)
+        d7 = dCircle(P, 4, 2, 2)
+        d8 = dCircle(P, 2, 4, 2)
+        d = dUnion(d, dUnion(d6, dUnion(d7, d8)))
+        d9 = dCircle(P, 2, 14, 2)
+        d10 = dCircle(P, 2, 16, 2)
+        d11 = dCircle(P, 18.885, 2.5, 1.2)
+        d12 = dCircle(P, 20, 2.5, 1.2)
+        Dist = dUnion(d, dUnion(d9, dUnion(d10, dUnion(d11, d12))))
+        return Dist
 
     def BndryCnds(self, Node, Element, BdBox):
         CornerCircle = np.sqrt(
@@ -59,15 +75,14 @@ class SuspensionDomain(Domain):
 
 
 class MichellDomain(Domain):
-    def __init__(self, name, BdBox, PFix, DistFnc):
-        super().__init__(name, BdBox, PFix, DistFnc)
+    def __init__(self, name, BdBox, PFix):
+        super().__init__(name, BdBox, PFix)
 
-    def compute(self, Demand, BdBox, Arg=None):
-        if Demand == 'Dist':
-            x = self.DistFnc(Arg, BdBox)
-        elif Demand == 'BC':
-            x = self.BndryCnds(Arg[0], Arg[1], BdBox)
-        return x
+    def DistFnc(self, P, BdBox):
+        d1 = dRectangle(P, BdBox[0], BdBox[1], BdBox[2], BdBox[3])
+        d2 = dCircle(P, 0, 0, BdBox[3] / 2)
+        Dist = dDiff(d1, d2)
+        return Dist
 
     def BndryCnds(self, Node, Element, BdBox):
         eps = 0.1 * ((BdBox[1] - BdBox[0]) *
@@ -86,15 +101,23 @@ class MichellDomain(Domain):
 
 
 class WrenchDomain(Domain):
-    def __init__(self, name, BdBox, PFix, DistFnc):
-        super().__init__(name, BdBox, PFix, DistFnc)
+    def __init__(self, name, BdBox, PFix):
+        super().__init__(name, BdBox, PFix)
 
-    def compute(self, Demand, BdBox, Arg=None):
-        if Demand == 'Dist':
-            x = self.DistFnc(Arg, BdBox)
-        elif Demand == 'BC':
-            x = self.BndryCnds(*Arg, BdBox)
-        return x
+    def DistFnc(self, P, BdBox):
+        d1 = dLine(P, 0, 0.3, 0, -0.3)
+        d2 = dLine(P, 0, -0.3, 2, -0.5)
+        d3 = dLine(P, 2, -0.5, 2, 0.5)
+        d4 = dLine(P, 2, 0.5, 0, 0.3)
+        d5 = dCircle(P, 0, 0, 0.3)
+        d6 = dCircle(P, 2, 0, 0.5)
+        douter = dUnion(d6, dUnion(d5,
+                                   dIntersect(d4, dIntersect(d3, dIntersect(d2, d1)))))
+        d7 = dCircle(P, 0, 0, 0.175)
+        d8 = dCircle(P, 2, 0, 0.3)
+        din = dUnion(d8, d7)
+        Dist = dDiff(douter, din)
+        return Dist
 
     def BndryCnds(self, Node, Element, BdBox):
         eps = 0.1 * np.sqrt((BdBox[1] - BdBox[0]) *
@@ -113,15 +136,15 @@ class WrenchDomain(Domain):
 
 
 class HornDomain(Domain):
-    def __init__(self, name, BdBox, PFix, DistFnc):
-        super().__init__(name, BdBox, PFix, DistFnc)
+    def __init__(self, name, BdBox, PFix):
+        super().__init__(name, BdBox, PFix)
 
-    def compute(self, Demand, BdBox, Arg=None):
-        if Demand == 'Dist':
-            x = self.DistFnc(Arg, BdBox)
-        elif Demand == 'BC':
-            x = self.BndryCnds(Arg[0], Arg[1], BdBox)
-        return x
+    def DistFnc(self, P, BdBox):
+        d1 = dCircle(P, 0, 0, 1)
+        d2 = dCircle(P, -0.4, 0, 0.55)
+        d3 = dLine(P, 0, 0, 1, 0)
+        Dist = dIntersect(d3, dDiff(d1, d2))
+        return Dist
 
     def BndryCnds(self, Node, Element, BdBox):
         x = [None, None]  # No boundary conditions specified for this problem
@@ -129,15 +152,8 @@ class HornDomain(Domain):
 
 
 class MbbDomain(Domain):
-    def __init__(self, name, BdBox, PFix, DistFnc):
-        super().__init__(name, BdBox, PFix, DistFnc)
-
-    def compute(self, Demand, BdBox, Arg=None):
-        if Demand == "Dist":
-            x = self.DistFnc(Arg, BdBox)
-        elif Demand == "BC":
-            x = self.BndryCnds(*Arg, BdBox)
-        return x
+    def __init__(self, name, BdBox, PFix):
+        super().__init__(name, BdBox, PFix)
 
     def DistFnc(self, P, BdBox):
         Dist = dRectangle(P, BdBox[0], BdBox[1], BdBox[2], BdBox[3])
