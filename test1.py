@@ -1,8 +1,9 @@
 import numpy as np
-from pyPolyMesher import PolyMesher
+from pyPolyMesher import *
+from pyExampleDomains import *
 
 
-# for structured mesh 
+# for structured mesh
 # nelx = 5
 # nely = 4
 # dx = 3 / nelx
@@ -28,21 +29,21 @@ from pyPolyMesher import PolyMesher
 
 # for unstructured mesh
 
-# from pyMbbDomain import MbbDomain
-# PolyMesher(MbbDomain, 50, 100)
+# mbb_domain = MbbDomain("Mbb Domain")
+# PolyMesher(mbb_domain, 50, 100)
 
-# from pyHornDomain import HornDomain
-# PolyMesher(HornDomain,150,50, anim=True)
+# horn_domain = HornDomain("Horn Domain")
+# PolyMesher(horn_domain, 150, 50, anim=True)
 
-# from pyWrenchDomain import WrenchDomain
-# PolyMesher(WrenchDomain,150,100)
+# wrench_domain = WrenchDomain("Wrench Domain")
+# PolyMesher(wrench_domain, 150, 100)
 
 # Example with Fixed Points
-# from pyMichellDomain import MichellDomain
-# PolyMesher(MichellDomain,20,100)
+# michell_domain = MichellDomain("Michell Domain")
+# PolyMesher(michell_domain, 20, 100)
 
-# from pySuspensionDomain import SuspensionDomain
-# PolyMesher(SuspensionDomain,750,150)
+# suspension_domain = SuspensionDomain("Suspension Domain")
+# PolyMesher(suspension_domain, 750, 150)
 
-from pyCookDomain import CookDomain
-Node, Element, Supp, Load, P = PolyMesher(CookDomain,50,20)
+cook_domain = CookDomain("Cook Domain")
+Node, Element, Supp, Load, P = PolyMesher(cook_domain, 50, 20)
