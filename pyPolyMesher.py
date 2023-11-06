@@ -16,10 +16,12 @@ Functions:
     - PolyMshr_RbldLists(Node0, Element0, cNode): Rebuild node and element lists based on node mapping.
     - PolyMshr_PlotMsh(Node, Element, NElem, Supp=None, Load=None, wait=False): Plot the polygon mesh with optional boundary conditions.
 
-These functions can be used for polygon mesh generation in computational 
-geometry applications. For more detailed information on each function, refer to their individual
-docstrings.
+Classes:
+    - Domain: Represents a mathematically defined domain for polygonal mesh. See the class docstring for details.
 
+These functions and the 'Domain' class can be used for polygon mesh generation in computational 
+geometry applications. For more detailed information on each function and the 'Domain' class, 
+refer to their individual docstrings.
 
 Notes:
 - These function names have been chosen to align with corresponding functions in
@@ -34,20 +36,100 @@ from scipy.sparse import csr_matrix, csgraph
 
 
 class Domain:
-    def __init__(self, name, BdBox, SDF, BC = None, PFix = []):
+    """
+    Represents a mathematically defined domain for polygonal mesh.
+
+    This class defines a mathematically defined domain based on its name, bounding box,
+    signed distance function (SDF), boundary conditions (BC), and fixed points (PFix).
+
+    Attributes:
+        name (str): The name of the mathematically defined domain.
+        BdBox (list): The bounding box of the domain, defined as [xmin, xmax, ymin, ymax].
+        SDF (callable): The signed distance function that provides the distance values.
+        BC (callable, optional): The function for setting boundary conditions. Default is None.
+        PFix (list, optional): List of fixed points within the domain. Default is an empty list.
+
+    Methods:
+        DistFnc(P):
+            Computes the distance value for a point P using the signed distance function.
+
+        BndryCnds(Node):
+            Determines the boundary conditions for a given node within the domain.
+
+        Plot(n=1000):
+            Plots the domain based on the signed distance function.
+
+    """
+
+    def __init__(self, name, BdBox, SDF, BC=None, PFix=[]):
+        """
+        Initializes a Domain object with the provided attributes.
+
+        Args:
+            name (str): The name of the computational domain.
+            BdBox (list): The bounding box of the domain, defined as [xmin, xmax, ymin, ymax].
+            SDF (callable): The signed distance function that provides the distance values.
+            BC (callable, optional): The function for setting boundary conditions. Default is None.
+            PFix (list, optional): List of fixed points within the domain. Default is an empty list.
+        """
         self.name = name
         self.BdBox = BdBox
         self.PFix = PFix
         self.SDF = SDF
         self.BC = BC
 
-    def DistFnc(self, P):       
+    def DistFnc(self, P):
+        """
+        Computes the distance value for a point P using the signed distance function.
+
+        Args:
+            P (numpy.ndarray): A point or an array of points for which the distance is to be calculated.
+
+        Returns:
+            numpy.ndarray: An array of distance values corresponding to the input points.
+        """
         return self.SDF(P)
 
-    def BndryCnds(self, Node, Element, BdBox):
+    def BndryCnds(self, Node):
+        """
+        Determines the boundary conditions for a given node within the domain.
+
+        Args:
+            Node (tuple): The coordinates of a node (x, y).
+
+        Returns:
+            list: A list containing boundary conditions for the node. It may include None values.
+        """
         if self.BC == None:
             return [None, None]
-        return self.BC(Node, BdBox)
+        return self.BC(Node, self.BdBox)
+
+    def Plot(self, n=1000):
+        """
+        Plots the domain based on the signed distance function.
+
+        Args:
+            n (int, optional): The number of points for plotting. Default is 1000.
+
+        Displays:
+            A plot of the domain based on the signed distance function.
+        """
+        x, y = np.meshgrid(
+            np.linspace(self.BdBox[0], self.BdBox[1], n),
+            np.linspace(self.BdBox[2], self.BdBox[3], n),
+        )
+        points = np.hstack([x.reshape((-1, 1)), y.reshape((-1, 1))])
+
+        sdf = self.SDF(points)[:, -1]
+        inner = np.where(sdf <= 0, 0, 1)
+
+        plt.imshow(
+            inner.reshape((n, n)),
+            extent=(self.BdBox[0], self.BdBox[1], self.BdBox[2], self.BdBox[3]),
+            origin="lower",
+            cmap="gray",
+        )
+        plt.show()
 
 
 def PolyMesher(Domain, NElem, MaxIter, P=None, anim=False):
@@ -112,7 +194,7 @@ def PolyMesher(Domain, NElem, MaxIter, P=None, anim=False):
 
     Node, Element = PolyMshr_RsqsNds(Node, Element, NElem)
 
-    BC = Domain.BndryCnds(Node, Element, Domain.BdBox)
+    BC = Domain.BndryCnds(Node)
     Supp = BC[0]
     Load = BC[1]
 
@@ -143,7 +225,7 @@ def PolyMshr_RndPtSet(NElem, Domain):
         d = Domain.DistFnc(Y)
         I = np.where(d[:, -1] < 0)[0]
         NumAdded = min(NElem - Ctr, len(I))
-        P[Ctr: Ctr + NumAdded, :] = Y[I[0:NumAdded], :]
+        P[Ctr : Ctr + NumAdded, :] = Y[I[0:NumAdded], :]
         Ctr += NumAdded
 
     return P
@@ -164,11 +246,9 @@ def PolyMshr_FixedPoints(P, R_P, PFix):
     PP = np.vstack((P, R_P))
     for i in range(PFix.shape[0]):
         B, I = np.sort(
-            np.sqrt((PP[:, 0] - PFix[i, 0]) ** 2 +
-                    (PP[:, 1] - PFix[i, 1]) ** 2)
+            np.sqrt((PP[:, 0] - PFix[i, 0]) ** 2 + (PP[:, 1] - PFix[i, 1]) ** 2)
         ), np.argsort(
-            np.sqrt((PP[:, 0] - PFix[i, 0]) ** 2 +
-                    (PP[:, 1] - PFix[i, 1]) ** 2)
+            np.sqrt((PP[:, 0] - PFix[i, 0]) ** 2 + (PP[:, 1] - PFix[i, 1]) ** 2)
         )
         for j in range(1, 4):
             n = PP[I[j], :] - PFix[i, :]
@@ -176,7 +256,7 @@ def PolyMshr_FixedPoints(P, R_P, PFix):
             PP[I[j], :] = PP[I[j], :] - n * (B[j] - B[0])
 
     P = PP[: P.shape[0], :]
-    R_P = PP[P.shape[0]:, :]
+    R_P = PP[P.shape[0] :, :]
     return P, R_P
 
 
@@ -200,10 +280,8 @@ def PolyMshr_Rflct(P, NElem, Domain, Alpha):
     NBdrySegs = d.shape[1] - 1
 
     # The gradient of the distance function is computed by means of numerical differentiation
-    n1 = (
-        (Domain.DistFnc(P + np.array([[eps, 0]] * NElem))) - d) / eps
-    n2 = (
-        (Domain.DistFnc(P + np.array([[0, eps]] * NElem))) - d) / eps
+    n1 = ((Domain.DistFnc(P + np.array([[eps, 0]] * NElem))) - d) / eps
+    n2 = ((Domain.DistFnc(P + np.array([[0, eps]] * NElem))) - d) / eps
     I = np.abs(d[:, 0:NBdrySegs]) < Alpha
     P1 = np.broadcast_to(P[:, 0][:, np.newaxis], (P[:, 0].shape[0], NBdrySegs))
     P2 = np.broadcast_to(P[:, 1][:, np.newaxis], (P[:, 1].shape[0], NBdrySegs))

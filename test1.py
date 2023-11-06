@@ -3,7 +3,7 @@ from pyPolyMesher import PolyMesher, Domain
 
 ### --------------------------- Mbb Domain ----------------------------------------
 
-from pyExampleDomains import MbbDomain
+from pyExampleDomains import MbbDomain, SuspensionDomain
 
 ### for structured mesh
 # nelx = 5
@@ -41,6 +41,7 @@ from pyExampleDomains import MbbDomain
 ### --------------------------Wrench Domain------------------------------------------
 
 # from pyExampleDomains import WrenchDomain
+# WrenchDomain.Plot()
 # Node, Element, Supp, Load, P = PolyMesher(WrenchDomain, 150, 100)
 
 ### ------------------------- Michell Domain ---------------------------------------
@@ -56,7 +57,7 @@ from pyExampleDomains import MbbDomain
 ### ------------------------ Suspension Domain -----------------------------------------
 
 # from pyExampleDomains import SuspensionDomain
-
+# SuspensionDomain.Plot()
 # Node, Element, Supp, Load, P = PolyMesher(SuspensionDomain, 750, 150)
 
 ### with fixed points
@@ -66,7 +67,8 @@ from pyExampleDomains import MbbDomain
 ### --------------------------- Cook's Membrane Domain -----------------------------------------
 
 from pyExampleDomains import CookDomain
-Node, Element, Supp, Load, P = PolyMesher(CookDomain, 50, 500)
+CookDomain.Plot()
+Node, Element, Supp, Load, P = PolyMesher(CookDomain, 50, 200)
 
 # --------------------------- How to mesh a new domain -----------------------------------------
 
@@ -89,6 +91,9 @@ Node, Element, Supp, Load, P = PolyMesher(CookDomain, 50, 500)
 # from pyPolyMesher import Domain
 # NewDomain = Domain("My New Domain", BdBox, SDF, BC)
 #
-# 5. Generate mesh
+# 5. Plot the domain
+# NewDomain.Plot()
+#
+# 6. Generate mesh
 # from pyPolyMesher import PolyMesher
 # Node, Element, Supp, Load, P = PolyMesher(NewDomain, NumberofElements, MaxIterations)
