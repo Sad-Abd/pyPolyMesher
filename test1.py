@@ -1,9 +1,11 @@
 import numpy as np
-from pyPolyMesher import *
-# from pyExampleDomains import *
+from pyPolyMesher import PolyMesher, Domain
 
+### --------------------------- Mbb Domain ----------------------------------------
 
-# for structured mesh
+from pyExampleDomains import MbbDomain
+
+### for structured mesh
 # nelx = 5
 # nely = 4
 # dx = 3 / nelx
@@ -12,9 +14,10 @@ from pyPolyMesher import *
 # y_range = np.arange(dy / 2, 1, dy)
 # X, Y = np.meshgrid(x_range, y_range)
 # P = np.column_stack((X.ravel(), Y.ravel()))
+# Node, Element, Supp, Load, P = PolyMesher(MbbDomain, 20, 30, P)
 # PolyMesher(MbbDomain, 20, 30, P)
 
-# for unstructured mesh with given points (can be used to compare results with MATLAB code)
+### for unstructured mesh with given points (can be used to compare results with MATLAB code)
 # P = np.array([[2.60026522, 0.03321281],
 #  [0.01350291, 0.39790721],
 #  [1.06513347, 0.40730687],
@@ -25,57 +28,48 @@ from pyPolyMesher import *
 #  [0.95129956, 0.09203691],
 #  [0.6433727,  0.67682601],
 #  [2.1696533,  0.3882989 ]])
-# PolyMesher(MbbDomain, 10, 50, P)
+# Node, Element, Supp, Load, P = PolyMesher(MbbDomain, 10, 50, P)
 
-# for unstructured mesh
+### random points
+# Node, Element, Supp, Load, P = PolyMesher(MbbDomain, 50, 100, anim=True)
 
-# ---------------------------------------------------------------------------------
+### ----------------------------- Horn Domain ------------------------------------------
 
-# BdBox = [0, 3, 0, 1]
-# PFix = []
+# from pyExampleDomains import HornDomain
+# Node, Element, Supp, Load, P = PolyMesher(HornDomain, 150, 50, anim=True)
 
-# mbb_domain = MbbDomain("Mbb Domain", BdBox, PFix)
-# PolyMesher(mbb_domain, 50, 100)
+### --------------------------Wrench Domain------------------------------------------
 
-# ---------------------------------------------------------------------------------
+# from pyExampleDomains import WrenchDomain
+# Node, Element, Supp, Load, P = PolyMesher(WrenchDomain, 150, 100)
 
-# BdBox = [-1, 1, 0, 1]
-# PFix = []
+### ------------------------- Michell Domain ---------------------------------------
 
-# horn_domain = HornDomain("Horn Domain", BdBox, PFix)
-# PolyMesher(horn_domain, 150, 50, anim=True)
+# from pyExampleDomains import MichellDomain
 
-# ---------------------------------------------------------------------------------
+# Node, Element, Supp, Load, P = PolyMesher(MichellDomain, 20, 100)
 
-# BdBox = [-0.3, 2.5, -0.5, 0.5]
-# PFix = []
+## with fixed points
+# MichellDomain.PFix = [5, 0]
+# Node, Element, Supp, Load, P = PolyMesher(MichellDomain, 20, 100)
 
-# wrench_domain = WrenchDomain("Wrench Domain", BdBox, PFix)
-# PolyMesher(wrench_domain, 150, 100)
+### ------------------------ Suspension Domain -----------------------------------------
 
-# ---------------------------------------------------------------------------------
+# from pyExampleDomains import SuspensionDomain
 
-# BdBox = [0, 5, -2, 2]
-# PFix = [5, 0]
+# Node, Element, Supp, Load, P = PolyMesher(SuspensionDomain, 750, 150)
 
-# michell_domain = MichellDomain("Michell Domain", BdBox, PFix)
-# PolyMesher(michell_domain, 20, 100)
+### with fixed points
+# SuspensionDomain.PFix = [[2, 2], [2, 16], [20, 2.5]]
+# Node, Element, Supp, Load, P = PolyMesher(SuspensionDomain, 750, 150)
 
-# ---------------------------------------------------------------------------------
-
-# BdBox = [-2, 24, -2, 24]
-# PFix = [[2, 2], [2, 16], [20, 2.5]]
-
-# suspension_domain = SuspensionDomain("Suspension Domain", BdBox, PFix)
-# PolyMesher(suspension_domain, 750, 150)
-
-# ---------------------------------------------------------------------------------
+### --------------------------- Cook's Membrane Domain -----------------------------------------
 
 from pyExampleDomains import CookDomain
 Node, Element, Supp, Load, P = PolyMesher(CookDomain, 50, 500)
 
-# How to mesh a new domain:
-#
+# --------------------------- How to mesh a new domain -----------------------------------------
+
 #
 # 1. Define the Bounding Box
 # BdBox = [x0,y0,x1,y1]
