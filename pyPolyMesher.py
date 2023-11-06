@@ -30,7 +30,24 @@ Notes:
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.spatial import Voronoi, voronoi_plot_2d
-from scipy.sparse import csr_matrix,csgraph
+from scipy.sparse import csr_matrix, csgraph
+
+
+class Domain:
+    def __init__(self, name, BdBox, SDF, BC = None, PFix = []):
+        self.name = name
+        self.BdBox = BdBox
+        self.PFix = PFix
+        self.SDF = SDF
+        self.BC = BC
+
+    def DistFnc(self, P):       
+        return self.SDF(P)
+
+    def BndryCnds(self, Node, Element, BdBox):
+        if self.BC == None:
+            return [None, None]
+        return self.BC(Node, BdBox)
 
 
 def PolyMesher(Domain, NElem, MaxIter, P=None, anim=False):
@@ -55,8 +72,8 @@ def PolyMesher(Domain, NElem, MaxIter, P=None, anim=False):
     It = 0
     Err = 1
     c = 1.5  # constant of proportionality used for calculation of 'Alpha' should be greater than 1
-    BdBox = Domain("BdBox")
-    PFix = Domain("PFix")
+    BdBox = Domain.BdBox
+    PFix = np.array(Domain.PFix).reshape((-1, 2))
     Area = (BdBox[1] - BdBox[0]) * (BdBox[3] - BdBox[2])
     Pc = P.copy()
 
@@ -86,7 +103,7 @@ def PolyMesher(Domain, NElem, MaxIter, P=None, anim=False):
         print(f"It: {It}   Error: {Err}")
         It += 1
 
-        if (anim==True) & (NElem <= 2000):
+        if (anim == True) & (NElem <= 2000):
             PolyMshr_PlotMsh(Node, Element, NElem)
 
     Node, Element = PolyMshr_ExtrNds(Node, Element[:NElem])
@@ -95,7 +112,7 @@ def PolyMesher(Domain, NElem, MaxIter, P=None, anim=False):
 
     Node, Element = PolyMshr_RsqsNds(Node, Element, NElem)
 
-    BC = Domain("BC", [Node, Element])
+    BC = Domain.BndryCnds(Node, Element, Domain.BdBox)
     Supp = BC[0]
     Load = BC[1]
 
@@ -116,17 +133,17 @@ def PolyMshr_RndPtSet(NElem, Domain):
         numpy.ndarray: A 2D array containing the generated points.
     """
     P = np.zeros((NElem, 2))
-    BdBox = Domain("BdBox")
+    BdBox = Domain.BdBox
     Ctr = 0
 
     while Ctr < NElem:
         Y = np.random.rand(NElem, 2)
         Y[:, 0] = (BdBox[1] - BdBox[0]) * Y[:, 0] + BdBox[0]
         Y[:, 1] = (BdBox[3] - BdBox[2]) * Y[:, 1] + BdBox[2]
-        d = Domain("Dist", Y)
+        d = Domain.DistFnc(Y)
         I = np.where(d[:, -1] < 0)[0]
         NumAdded = min(NElem - Ctr, len(I))
-        P[Ctr : Ctr + NumAdded, :] = Y[I[0:NumAdded], :]
+        P[Ctr: Ctr + NumAdded, :] = Y[I[0:NumAdded], :]
         Ctr += NumAdded
 
     return P
@@ -147,9 +164,11 @@ def PolyMshr_FixedPoints(P, R_P, PFix):
     PP = np.vstack((P, R_P))
     for i in range(PFix.shape[0]):
         B, I = np.sort(
-            np.sqrt((PP[:, 0] - PFix[i, 0]) ** 2 + (PP[:, 1] - PFix[i, 1]) ** 2)
+            np.sqrt((PP[:, 0] - PFix[i, 0]) ** 2 +
+                    (PP[:, 1] - PFix[i, 1]) ** 2)
         ), np.argsort(
-            np.sqrt((PP[:, 0] - PFix[i, 0]) ** 2 + (PP[:, 1] - PFix[i, 1]) ** 2)
+            np.sqrt((PP[:, 0] - PFix[i, 0]) ** 2 +
+                    (PP[:, 1] - PFix[i, 1]) ** 2)
         )
         for j in range(1, 4):
             n = PP[I[j], :] - PFix[i, :]
@@ -157,7 +176,7 @@ def PolyMshr_FixedPoints(P, R_P, PFix):
             PP[I[j], :] = PP[I[j], :] - n * (B[j] - B[0])
 
     P = PP[: P.shape[0], :]
-    R_P = PP[P.shape[0] :, :]
+    R_P = PP[P.shape[0]:, :]
     return P, R_P
 
 
@@ -175,13 +194,16 @@ def PolyMshr_Rflct(P, NElem, Domain, Alpha):
         numpy.ndarray: Reflected points.
     """
     eps = 1e-8  # Small positive number for numerical differentiation
-    eta = 0.9  # A specified parameter (0<eta<1) to adjust for numerical errors (round-off and numerical differentiation)
-    d = Domain("Dist", P)
+    # A specified parameter (0<eta<1) to adjust for numerical errors (round-off and numerical differentiation)
+    eta = 0.9
+    d = Domain.DistFnc(P)
     NBdrySegs = d.shape[1] - 1
 
     # The gradient of the distance function is computed by means of numerical differentiation
-    n1 = ((Domain("Dist", P + np.array([[eps, 0]] * NElem))) - d) / eps
-    n2 = ((Domain("Dist", P + np.array([[0, eps]] * NElem))) - d) / eps
+    n1 = (
+        (Domain.DistFnc(P + np.array([[eps, 0]] * NElem))) - d) / eps
+    n2 = (
+        (Domain.DistFnc(P + np.array([[0, eps]] * NElem))) - d) / eps
     I = np.abs(d[:, 0:NBdrySegs]) < Alpha
     P1 = np.broadcast_to(P[:, 0][:, np.newaxis], (P[:, 0].shape[0], NBdrySegs))
     P2 = np.broadcast_to(P[:, 1][:, np.newaxis], (P[:, 1].shape[0], NBdrySegs))
@@ -189,7 +211,7 @@ def PolyMshr_Rflct(P, NElem, Domain, Alpha):
     P1 = P1[I] - 2 * n1[:, 0:NBdrySegs][I] * d[:, 0:NBdrySegs][I]
     P2 = P2[I] - 2 * n2[:, 0:NBdrySegs][I] * d[:, 0:NBdrySegs][I]
     R_P = np.vstack((P1, P2)).T
-    d_R_P = Domain("Dist", R_P)
+    d_R_P = Domain.DistFnc(R_P)
     J = (np.abs(d_R_P[:, -1]) >= eta * np.abs(d[:, 0:NBdrySegs][I])) & (
         d_R_P[:, -1] > 0
     )
