@@ -1,6 +1,6 @@
 import numpy as np
 from pyPolyMesher import Domain
-from pydFunctions import *
+from pyPolyMesher.dFunctions import *
 
 def _cookSDF(P):
     d1 = dLine(P, 0., 44., 0., 0.)

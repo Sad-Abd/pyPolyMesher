@@ -1,11 +1,11 @@
 import numpy as np
 from pyPolyMesher import PolyMesher, Domain
 
-### --------------------------- Mbb Domain ----------------------------------------
+# # --------------------------- Mbb Domain ----------------------------------------
 
-from pyExampleDomains import MbbDomain, SuspensionDomain
+# from pyPolyMesher.exampleDomains import MbbDomain
 
-### for structured mesh
+# # for structured mesh
 # nelx = 5
 # nely = 4
 # dx = 3 / nelx
@@ -17,7 +17,7 @@ from pyExampleDomains import MbbDomain, SuspensionDomain
 # Node, Element, Supp, Load, P = PolyMesher(MbbDomain, 20, 30, P)
 # PolyMesher(MbbDomain, 20, 30, P)
 
-### for unstructured mesh with given points (can be used to compare results with MATLAB code)
+# # for unstructured mesh with given points (can be used to compare results with MATLAB code)
 # P = np.array([[2.60026522, 0.03321281],
 #  [0.01350291, 0.39790721],
 #  [1.06513347, 0.40730687],
@@ -30,43 +30,43 @@ from pyExampleDomains import MbbDomain, SuspensionDomain
 #  [2.1696533,  0.3882989 ]])
 # Node, Element, Supp, Load, P = PolyMesher(MbbDomain, 10, 50, P)
 
-### random points
+# # random points
 # Node, Element, Supp, Load, P = PolyMesher(MbbDomain, 50, 100, anim=True)
 
-### ----------------------------- Horn Domain ------------------------------------------
+# # ----------------------------- Horn Domain ------------------------------------------
 
-# from pyExampleDomains import HornDomain
+# from pyPolyMesher.exampleDomains import HornDomain
 # Node, Element, Supp, Load, P = PolyMesher(HornDomain, 150, 50, anim=True)
 
-### --------------------------Wrench Domain------------------------------------------
+# # --------------------------Wrench Domain------------------------------------------
 
-# from pyExampleDomains import WrenchDomain
+# from pyPolyMesher.exampleDomains import WrenchDomain
 # WrenchDomain.Plot()
 # Node, Element, Supp, Load, P = PolyMesher(WrenchDomain, 150, 100)
 
-### ------------------------- Michell Domain ---------------------------------------
+# # ------------------------- Michell Domain ---------------------------------------
 
-# from pyExampleDomains import MichellDomain
+# from pyPolyMesher.exampleDomains import MichellDomain
 
 # Node, Element, Supp, Load, P = PolyMesher(MichellDomain, 20, 100)
 
-## with fixed points
+# # with fixed points
 # MichellDomain.PFix = [5, 0]
 # Node, Element, Supp, Load, P = PolyMesher(MichellDomain, 20, 100)
 
-### ------------------------ Suspension Domain -----------------------------------------
+# # ------------------------ Suspension Domain -----------------------------------------
 
-# from pyExampleDomains import SuspensionDomain
+# from pyPolyMesher.exampleDomains import SuspensionDomain
 # SuspensionDomain.Plot()
 # Node, Element, Supp, Load, P = PolyMesher(SuspensionDomain, 750, 150)
 
-### with fixed points
+# # with fixed points
 # SuspensionDomain.PFix = [[2, 2], [2, 16], [20, 2.5]]
 # Node, Element, Supp, Load, P = PolyMesher(SuspensionDomain, 750, 150)
 
 ### --------------------------- Cook's Membrane Domain -----------------------------------------
 
-from pyExampleDomains import CookDomain
+from pyPolyMesher.exampleDomains import CookDomain
 CookDomain.Plot()
 Node, Element, Supp, Load, P = PolyMesher(CookDomain, 50, 200)
 
@@ -79,7 +79,7 @@ Node, Element, Supp, Load, P = PolyMesher(CookDomain, 50, 200)
 # 2. Create a signed distance function
 # def SDF(P):
 #   # some codes to compute the signed distances of points P from domain edges
-#   # you can use and combine available signed distance functions from pydFunction module
+#   # you can use and combine available signed distance functions from pyPolyMesher.pydFunction module
 #   return distances
 #
 # 3. Create a BC rule based on nodes coordinates (optional)
