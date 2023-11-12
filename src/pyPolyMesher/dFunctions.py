@@ -146,3 +146,20 @@ def dUnion(d1, d2):
     d = np.column_stack((d1[:, :-1], d2[:, :-1]))
     d = np.column_stack((d, np.minimum(d1[:, -1], d2[:, -1])))
     return d
+
+def dPolygon(P, points):
+    """
+    Calculate the signed distance from points P to a polygon defined by its vertices.
+
+    Parameters:
+        P (numpy.ndarray): An array of 2D points (shape: (N, 2)).
+        points (list): A list of vertices defining the polygon.
+
+    Returns:
+        numpy.ndarray: An array of signed distances from each point in P to the polygon.
+    """
+    if points[0] != points[-1]:
+        points.append(points[0])
+    d = np.column_stack([dLine(P, *points[i], *points[i+1])[:,-1] for i in range(len(points)-1)])
+    d = np.column_stack((d, np.max(d, axis=1)))
+    return d
