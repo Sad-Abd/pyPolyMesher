@@ -147,6 +147,24 @@ def dUnion(d1, d2):
     d = np.column_stack((d, np.minimum(d1[:, -1], d2[:, -1])))
     return d
 
+def is_counter_clockwise(points):
+    """
+    Determines if the given points form a counter-clockwise ordering in a 2D plane.
+
+    Parameters:
+        points (list of tuples): A list of (x, y) coordinate tuples representing the polygon's vertices.
+
+    Returns:
+        bool: True if the points are arranged in a counter-clockwise order, False otherwise.
+    """
+    sum_cross_product = 0
+    for i in range(len(points)):
+        x1, y1 = points[i]
+        x2, y2 = points[(i + 1) % len(points)]
+        sum_cross_product += (x2 - x1) * (y2 + y1)
+        print(sum_cross_product)
+    return sum_cross_product > 0
+
 def dPolygon(P, points):
     """
     Calculate the signed distance from points P to a polygon defined by its vertices.
@@ -158,6 +176,8 @@ def dPolygon(P, points):
     Returns:
         numpy.ndarray: An array of signed distances from each point in P to the polygon.
     """
+    if not is_counter_clockwise(points):
+        points = points[::-1]
     if points[0] != points[-1]:
         points.append(points[0])
     d = np.column_stack([dLine(P, *points[i], *points[i+1])[:,-1] for i in range(len(points)-1)])
