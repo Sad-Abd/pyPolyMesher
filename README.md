@@ -103,19 +103,23 @@ _to be added_
 3. ~~Make the resequence function work properly ([Issue #3](https://github.com/Sad-Abd/pyPolyMesher/issues/3)).~~
 4. ~~Transform Domain definitions into classes using Object-Oriented Programming (OOP) principles.~~
 5. ~~Rethink the file hierarchy and user experience.~~
+6. Use Jupyter notebook for `Examples.py`.
+7. Use Jupyter notebook to illustrate `Domain` creation.
+    * ~~Polygon importer~~
+    * Circle importer
+    * Spline importer
+    * Automatic SDF for geometries
 
 ### Section 2 - Upcoming Priorities
-1. Use Jupyter notebook for `Examples.py`.
-2. Use Jupyter notebook to illustrate `Domain` creation.
-3. Add some example meshes to the **README**.
-4. Enhance the **README** with more detailed information.
-5. Publish the package on *PYPI* and *Zenodo* for wider distribution.
-6. Add some tests.
+1. Add some example meshes to the **README**.
+2. Enhance the **README** with more detailed information.
+3. Publish the package on *PYPI* and *Zenodo* for wider distribution.
+4. Add some tests.
 
 ### Section 3 - Vision and Future Prospects
 
-1. Define `Domain` from `dxf` files.
-2. Develop a GUI for domain definition to improve user interaction.
+1. Develop a GUI for domain definition to improve user interaction.
+2. Plugin for CAD programs.
 3. Explore and brainstorm alternative options for domain definition and future possible expansions.
 
 See the [open issues](https://github.com/Sad-Abd/pyPolyMesher/issues) for a full list of proposed features (and known issues).
