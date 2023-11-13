@@ -66,9 +66,23 @@ from pyPolyMesher import PolyMesher, Domain
 
 ### --------------------------- Cook's Membrane Domain -----------------------------------------
 
-from pyPolyMesher.exampleDomains import CookDomain
-CookDomain.Plot()
-Node, Element, Supp, Load, P = PolyMesher(CookDomain, 50, 200)
+# from pyPolyMesher.exampleDomains import CookDomain
+# CookDomain.Plot()
+# Node, Element, Supp, Load, P = PolyMesher(CookDomain, 50, 200)
+
+### --------------------------- DXF Polygon Domain -----------------------------------------
+
+from pyPolyMesher.dxfImporter import dxf_polygon
+from pyPolyMesher.dFunctions import dPolygon
+
+dxf_file_path = 'examples/polygon1.dxf'
+v = dxf_polygon(dxf_file_path)
+
+SDF = lambda P: dPolygon(P, v)
+dxfDomain = Domain("DXF Polygon Domain", [0,100,0,100], SDF)
+dxfDomain.Plot()
+Node, Element, Supp, Load, P = PolyMesher(dxfDomain, 50, 100)
+
 
 # --------------------------- How to mesh a new domain -----------------------------------------
 
