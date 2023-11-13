@@ -162,7 +162,6 @@ def is_counter_clockwise(points):
         x1, y1 = points[i]
         x2, y2 = points[(i + 1) % len(points)]
         sum_cross_product += (x2 - x1) * (y2 + y1)
-        print(sum_cross_product)
     return sum_cross_product > 0
 
 def dPolygon(P, points):
@@ -176,7 +175,7 @@ def dPolygon(P, points):
     Returns:
         numpy.ndarray: An array of signed distances from each point in P to the polygon.
     """
-    if not is_counter_clockwise(points):
+    if is_counter_clockwise(points):
         points = points[::-1]
     if points[0] != points[-1]:
         points.append(points[0])
