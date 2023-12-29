@@ -182,3 +182,26 @@ def dPolygon(P, vertices):
     d = np.column_stack([dLine(P, *vertices[i], *vertices[i+1])[:,-1] for i in range(len(vertices)-1)])
     d = np.column_stack((d, np.max(d, axis=1)))
     return d
+
+
+def dSpline(P, bspline, domain_size = 200):
+
+    points = np.linspace(0, 1, domain_size, endpoint= False)
+    curve_points = bspline(points)
+
+    import matplotlib.pyplot as plt
+    plt.scatter(curve_points[:,0],curve_points[:,1])
+    plt.show()
+    
+    d = np.column_stack([np.linalg.norm(curve_points[i,:] - P, axis=1) for i in range(curve_points.shape[0])])
+    dmin = np.min(d, axis=1)
+    inds = np.argmin(d, axis=1)
+
+    curve_points2 = np.roll(curve_points, -1, axis=0)
+    
+    for i,ind in enumerate(inds):
+        dmin[i] = dmin[i] * np.sign(dLine(P[i,:], *curve_points[ind], *curve_points2[ind])[0,-1])
+        print(curve_points[ind],curve_points2[ind])
+        print(dLine(P[i,:], *curve_points[ind], *curve_points2[ind]))
+
+    return dmin.reshape(-1,1)
