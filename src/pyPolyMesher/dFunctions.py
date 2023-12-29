@@ -164,21 +164,21 @@ def is_counter_clockwise(points):
         sum_cross_product += (x2 - x1) * (y2 + y1)
     return sum_cross_product > 0
 
-def dPolygon(P, points):
+def dPolygon(P, vertices):
     """
     Calculate the signed distance from points P to a polygon defined by its vertices.
 
     Parameters:
         P (numpy.ndarray): An array of 2D points (shape: (N, 2)).
-        points (list): A list of vertices defining the polygon.
+        vertices (list): A list of vertices defining the polygon.
 
     Returns:
         numpy.ndarray: An array of signed distances from each point in P to the polygon.
     """
-    if is_counter_clockwise(points):
-        points = points[::-1]
-    if points[0] != points[-1]:
-        points.append(points[0])
-    d = np.column_stack([dLine(P, *points[i], *points[i+1])[:,-1] for i in range(len(points)-1)])
+    if is_counter_clockwise(vertices):
+        vertices = vertices[::-1]
+    if vertices[0] != vertices[-1]:
+        vertices.append(vertices[0])
+    d = np.column_stack([dLine(P, *vertices[i], *vertices[i+1])[:,-1] for i in range(len(vertices)-1)])
     d = np.column_stack((d, np.max(d, axis=1)))
     return d
