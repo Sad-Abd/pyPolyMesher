@@ -1,5 +1,5 @@
 import numpy as np
-from pyPolyMesher import PolyMesher, Domain
+from pyPolyMesher import PolyMesher, Domain, mesh_assessment
 
 # # --------------------------- Mbb Domain ----------------------------------------
 
@@ -70,6 +70,7 @@ from pyPolyMesher import PolyMesher, Domain
 # CookDomain.Plot()
 # Node, Element, Supp, Load, P = PolyMesher(CookDomain, 50, 200)
 
+
 ### --------------------------- DXF Polygon Domain -----------------------------------------
 
 from pyPolyMesher.dxfImporter import dxf_polygon
@@ -82,7 +83,7 @@ SDF = lambda P: dPolygon(P, v)
 dxfDomain = Domain("DXF Polygon Domain", [0,100,0,100], SDF)
 dxfDomain.Plot()
 Node, Element, Supp, Load, P = PolyMesher(dxfDomain, 50, 100)
-
+mesh_assessment(Node, Element)
 
 # --------------------------- How to mesh a new domain -----------------------------------------
 

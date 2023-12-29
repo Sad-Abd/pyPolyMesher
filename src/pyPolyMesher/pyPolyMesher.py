@@ -526,3 +526,15 @@ def PolyMshr_PlotMsh(Node, Element, NElem, Supp=None, Load=None, wait=False):
         plt.pause(3e-1)
     else:
         plt.show()
+
+def mesh_assessment(Node, Element):
+    mesh_AR = []
+    for elem in Element:
+        lengthes = []
+        elem2 = np.roll(elem, 1)
+        for e1,e2 in zip(elem,elem2):
+            lengthes.append(np.sqrt(np.sum((Node[e1]-Node[e2])**2)))
+        mesh_AR.append(max(lengthes)/min(lengthes))
+    
+    print(f"Max. Aspect Ratio : {max(mesh_AR)}")
+    print(f"Avg. Aspect Ratio : {sum(mesh_AR)/len(mesh_AR)}")
