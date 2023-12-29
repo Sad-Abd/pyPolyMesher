@@ -1,4 +1,5 @@
 from ezdxf import readfile
+import numpy as np
 
 def dxf_polygon(file_path):
     """
@@ -44,3 +45,22 @@ def dxf_polygon(file_path):
     else:
         raise ValueError("The entities in the file are not all lines or all polylines.")   
     return vertices
+
+from scipy.interpolate import BSpline
+
+def dxf_spline(file_path):
+    doc = readfile(file_path)
+    ent = doc.modelspace().query('SPLINE')[0]
+
+    control_points = np.array(ent.control_points)[:,:-1]
+    degree = ent.dxf.degree
+    knot_vector = np.array(ent.knots)
+
+
+    if not ent.closed:
+        raise ValueError("B-Spline should be closed!")
+    
+    ctrpnts = np.vstack((control_points,control_points[0,:]))
+    bspline = BSpline(knot_vector, ctrpnts, degree, extrapolate="periodic")
+    
+    return bspline
