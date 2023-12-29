@@ -72,17 +72,30 @@ from pyPolyMesher import PolyMesher, Domain
 
 ### --------------------------- DXF Polygon Domain -----------------------------------------
 
-from pyPolyMesher.dxfImporter import dxf_polygon
-from pyPolyMesher.dFunctions import dPolygon
+# from pyPolyMesher.dxfImporter import dxf_polygon
+# from pyPolyMesher.dFunctions import dPolygon
 
-dxf_file_path = 'examples/polygon1.dxf'
-v = dxf_polygon(dxf_file_path)
+# dxf_file_path = 'examples/polygon1.dxf'
+# v = dxf_polygon(dxf_file_path)
 
-SDF = lambda P: dPolygon(P, v)
-dxfDomain = Domain("DXF Polygon Domain", [0,100,0,100], SDF)
+# SDF = lambda P: dPolygon(P, v)
+# dxfDomain = Domain("DXF Polygon Domain", [0,100,0,100], SDF)
+# dxfDomain.Plot()
+# Node, Element, Supp, Load, P = PolyMesher(dxfDomain, 50, 100)
+
+### --------------------------- DXF Spline Domain -----------------------------------------
+
+from pyPolyMesher.dxfImporter import dxf_spline
+from pyPolyMesher.dFunctions import dSpline
+
+dxf_file_path = 'Untitled4.dxf'
+spline = dxf_spline(dxf_file_path)
+
+SDF = lambda P: dSpline(P, spline)
+# print(SDF(np.array([[13.2,96.6]])))
+dxfDomain = Domain("DXF Spline Domain", [0,100,0,100], SDF)
 dxfDomain.Plot()
-Node, Element, Supp, Load, P = PolyMesher(dxfDomain, 50, 100)
-
+# Node, Element, Supp, Load, P = PolyMesher(dxfDomain, 50, 100)
 
 # --------------------------- How to mesh a new domain -----------------------------------------
 
