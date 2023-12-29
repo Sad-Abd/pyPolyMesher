@@ -115,14 +115,14 @@ def dLine(P, x1, y1, x2, y2):
 def dRectangle(P, x1, x2, y1, y2):
     """
     Calculate the signed distance from points P to a rectangle defined
-    by its top-left (x1, y1) and bottom-right (x2, y2) coordinates.
+    by its bottom-left (x1, y1) and top-right (x2, y2) coordinates.
 
     Parameters:
         P (numpy.ndarray): An array of 2D points (shape: (N, 2)).
-        x1 (float): X-coordinate of the top-left corner of the rectangle.
-        x2 (float): X-coordinate of the bottom-right corner of the rectangle.
-        y1 (float): Y-coordinate of the top-left corner of the rectangle.
-        y2 (float): Y-coordinate of the bottom-right corner of the rectangle.
+        x1 (float): X-coordinate of the bottom-left corner of the rectangle.
+        x2 (float): X-coordinate of the top-right corner of the rectangle.
+        y1 (float): Y-coordinate of the bottom-left corner of the rectangle.
+        y2 (float): Y-coordinate of the top-right corner of the rectangle.
 
     Returns:
         numpy.ndarray: An array of signed distances from each point in P to the rectangle.
