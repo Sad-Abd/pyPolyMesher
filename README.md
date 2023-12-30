@@ -105,10 +105,12 @@ _to be added_
 5. ~~Rethink the file hierarchy and user experience.~~
 6. Use Jupyter notebook for `Examples.py`.
 7. Use Jupyter notebook to illustrate `Domain` creation.
+8. Define `Domain` from `dxf` files
     * ~~Polygon importer~~
     * Circle importer
     * Spline importer
     * Automatic SDF for geometries
+9. Add mesh quality assessments
 
 ### Section 2 - Upcoming Priorities
 1. Add some example meshes to the **README**.
