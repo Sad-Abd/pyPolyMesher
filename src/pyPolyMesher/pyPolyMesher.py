@@ -528,6 +528,9 @@ def PolyMshr_PlotMsh(Node, Element, NElem, Supp=None, Load=None, wait=False):
         plt.show()
 
 def mesh_assessment(Node, Element):
+    assessment = {}
+    
+    
     mesh_AR = []
     for elem in Element:
         lengthes = []
@@ -536,5 +539,32 @@ def mesh_assessment(Node, Element):
             lengthes.append(np.sqrt(np.sum((Node[e1]-Node[e2])**2)))
         mesh_AR.append(max(lengthes)/min(lengthes))
     
-    print(f"Max. Aspect Ratio : {max(mesh_AR)}")
-    print(f"Avg. Aspect Ratio : {sum(mesh_AR)/len(mesh_AR)}")
+    max_mesh_AR, mean_mesh_AR = max(mesh_AR), sum(mesh_AR)/len(mesh_AR)
+    
+    assessment["Max. Mesh AR"], assessment["Average Mesh AR"] = max_mesh_AR, mean_mesh_AR
+    
+    print(f"Max. Aspect Ratio : {max_mesh_AR}")
+    print(f"Avg. Aspect Ratio : {mean_mesh_AR}")
+    
+    areas = []
+    
+    for elem in Element:
+        polygon_vertices = Node[elem,:]
+    
+        vx = polygon_vertices[:, 0]
+        vy = polygon_vertices[:, 1]
+        vxs = np.roll(vx, -1)
+        vys = np.roll(vy, -1)
+        temp = vx * vys - vy * vxs
+        area = 0.5 * np.sum(temp)
+        areas.append(area)
+    
+    range_areas = (min(areas), max(areas))
+    standard_deviation = np.std(areas)
+    assessment["Range of Areas"], assessment["Standard Deviation of Areas"] = range_areas, standard_deviation
+    
+    
+    print(f"Range of Areas : {range_areas[0]} - {range_areas[1]}")
+    print(f"Standard Deviation of Areas : {standard_deviation}")
+    
+    return assessment
