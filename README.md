@@ -36,32 +36,34 @@
 <details>
   <summary>Table of Contents</summary>
   <ol>
-    <li>
-      <a href="#about-the-project">About The Project</a>
-    </li>
+    <li><a href="#about-the-project">About The Project</a></li>
     <li>
       <a href="#getting-started">Getting Started</a>
       <ul>
         <li><a href="#installation">Installation</a></li>
       </ul>
     </li>
-    <li><a href="#usage">Usage</a>
+    <li>
+      <a href="#usage">Usage</a>
       <ol>
-        <li><a href="#1.-read-image">Read Image</a></li>
+        <li><a href="#basic-usage">Basic Usage</a></li>
+        <li><a href="#internal-sdfs">Internal SDFs</a></li>
+        <li><a href="#example-domains">Example Domains</a></li>
+        <li><a href="#import-polygon-domain-from-dxf">Import Polygon Domain from DXF</a></li>
       </ol>
     </li>
     <li><a href="#roadmap">Roadmap</a></li>
     <li><a href="#contributing">Contributing</a></li>
     <li><a href="#license">License</a></li>
     <li><a href="#contact">Contact</a></li>
-    <li><a href="#acknowledgments">Acknowledgments</a></li>
   </ol>
 </details>
+
 
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-**pyPolyMesher** is a python package for generating unstructured polygonal meshes in arbitrarily defined 2D domains. It allows users to mathematically specify domains using signed distance functions (SDFs) and generates high-quality meshes adapted to the geometry and features of the domain. **pyPolyMesher** was initially created as a Python version of the [MATLAB PolyMesher program](http://paulino.princeton.edu/software.html) but has since been enriched with additional features.
+**pyPolyMesher** is a python package for generating unstructured polygonal meshes in arbitrarily defined 2D domains. It allows users to mathematically specify domains using [signed distance functions (SDFs)](https://sadjadabedi.ir/post/demystifying-signed-distance-functions/) and generates high-quality meshes adapted to the geometry and features of the domain. **pyPolyMesher** was initially created as a Python version of the [MATLAB PolyMesher program](http://paulino.princeton.edu/software.html) but has since been enriched with additional features.
 
 
 Key capabilities:
@@ -162,7 +164,7 @@ from pyPolyMesher import dFunctions as DF
 ### Import Polygon Domain from DXF:
 
 ```python
-from from pyPolyMesher import PolyMesher, Domain, mesh_assessment
+from pyPolyMesher import PolyMesher, Domain, mesh_assessment
 from pyPolyMesher.dxfImporter import dxf_polygon
 from pyPolyMesher.dFunctions import dPolygon
 
