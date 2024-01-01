@@ -61,11 +61,25 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-<!--[![Product Name Screen Shot][product-screenshot]](https://example.com)-->
+**pyPolyMesher** is a python package for generating unstructured polygonal meshes in arbitrarily defined 2D domains. It allows users to mathematically specify domains using signed distance functions (SDFs) and generates high-quality meshes adapted to the geometry and features of the domain. **pyPolyMesher** was initially created as a Python version of the [MATLAB PolyMesher program](http://paulino.princeton.edu/software.html) but has since been enriched with additional features.
 
-**pyPolyMesher** is a Python library for polygon mesh generation based on [MATLAB PolyMesher program](http://paulino.princeton.edu/software.html).
 
-![Example Mesh](docs/images/mesh_example.png)
+Key capabilities:
+
+- Define 2D domains mathematically using signed distance functions
+- Built-in library of SDF primitives (circles, rectangles etc.) and operations to construct complex domains
+- Ability to define custom SDFs for new domain geometries
+- Generate unstructured triangular/polygonal meshes adapted to domains
+- Apply boundary conditions and mark fixed points
+- Assess mesh quality metrics like element aspect ratio
+- Animate mesh generation process
+- Import and mesh polygons from DXF files
+
+By leveraging SDFs to represent domains, pyPolyMesher can capture intricate geometries and generate optimized meshes tailored to them, making it useful for simulations and analysis.
+
+The package provides Lloyd's algorithm for efficient and robust meshing of arbitrary SDF-based domains. Researchers can conveniently translate geometric constructs and concepts into code using the SDF formalism.
+
+Overall, pyPolyMesher simplifies the entire workflow - from domain specification to quality mesh generation to numerical analysis.
 
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -79,14 +93,97 @@ This part explains how to install and use this package.
 
 ### Installation
 
-_to be added_
+Since pyPolyMesher is not published on PyPI [_yet_], you need to clone the repository:
+
+```
+git clone https://github.com/Sad-Abd/pyPolyMesher.git
+```
+
+Then install it using pip:
+
+```
+pip install ./pyPolyMesher
+```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- USAGE EXAMPLES -->
 ## Usage
 
-_to be added_
+### Basic Usage:
+
+`pyPolyMesher.PolyMesherPolyMesher(Domain, NElem, MaxIter, P=None, anim=False)`: Generate polygon mesh on `Domain` with `NElem` number of elements. Improve mesh for `MaxIter` iterations. Can be given an initial point set `P`. 
+
+```python
+import pyPolyMesher
+from pyPolyMesher.exampleDomains import MichellDomain
+MichellDomain.Plot()
+Node, Element, Supp, Load, P = pyPolyMesher.PolyMesher(MichellDomain, 50, 100)
+```
+
+### Internal SDFs:
+```python
+from pyPolyMesher import dFunctions as DF
+```
+1. `DF.dLine(P, x1, y1, x2, y2)`: Calculate the signed distance from points P to a line segment defined by two endpoints (x1, y1) and (x2, y2).
+2. `DF.dCircle(P, xc, yc, r)`: Calculate the signed distance from points P to a circle defined by its center (xc, yc) and radius (r).
+3. `DF.dRectangle(P, x1, x2, y1, y2)`: Calculate the signed distance from points P to a rectangle defined by its bottom-left (x1, y1) and top-right (x2, y2) coordinates.
+4. `DF.dPolygon(P, vertices)`: Calculate the signed distance from points P to a polygon defined by its vertices.
+5. `DF.dUnion(d1, d2)`: Calculate the signed distance field resulting from the union of two distance fields (d1 and d2).
+6. `DF.dIntersect(d1, d2)`: Calculate the signed distance field resulting from the intersection of two distance fields (d1 and d2).
+7. `DF.dDiff(d1, d2)`: Calculate the signed distance field resulting from the difference of two distance fields (d1 and d2).
+
+### Example Domains:
+
+1. `pyPolyMesher.exampleDomains.MbbDomain`
+
+![MbbDomain](images/MBB_random.png)
+
+2. `pyPolyMesher.exampleDomains.HornDomain`
+
+![HornDomain](images/Horn.png)
+
+3. `pyPolyMesher.exampleDomains.WrenchDomain`
+
+![WrenchDomain](images/Wrench.png)
+
+4. `pyPolyMesher.exampleDomains.MichellDomain`
+
+![MichellDomain](images/Michell.png)
+
+5. `pyPolyMesher.exampleDomains.SuspensionDomain`
+
+![SuspensionDomain](images/suspension.png)
+
+6. `pyPolyMesher.exampleDomains.CookDomain`
+
+![CooksMembrane](images/cook_mesh.png)
+
+### Import Polygon Domain from DXF:
+
+```python
+from from pyPolyMesher import PolyMesher, Domain, mesh_assessment
+from pyPolyMesher.dxfImporter import dxf_polygon
+from pyPolyMesher.dFunctions import dPolygon
+
+dxf_file_path = 'examples/polygon1.dxf'
+v = dxf_polygon(dxf_file_path)
+
+SDF = lambda P: dPolygon(P, v)
+dxfDomain = Domain("DXF Polygon Domain", [0,100,0,100], SDF)
+dxfDomain.Plot()
+```
+
+![polygon_dxf](images/polygon_dxf.png)
+
+```python
+Node, Element, Supp, Load, P = PolyMesher(dxfDomain, 50, 100)
+mesh_assessment(Node, Element)
+```
+![polygon_dxf_mesh](images/polygon_dxf_mesh.png)
+
+
+See [Examples.py](examples/Examples.py) for more examples.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -111,12 +208,14 @@ _to be added_
     * Spline importer
     * Automatic SDF for geometries
 9. Add mesh quality assessments
+    * ~~Aspect Ratio~~
+    * ~~Standard Deviation of Elements Areas~~
+10. Add some example meshes to the **README**.
 
 ### Section 2 - Upcoming Priorities
-1. Add some example meshes to the **README**.
-2. Enhance the **README** with more detailed information.
-3. Publish the package on *PYPI* and *Zenodo* for wider distribution.
-4. Add some tests.
+1. Enhance the **README** with more detailed information.
+2. Publish the package on *PYPI* and *Zenodo* for wider distribution.
+3. Add some tests.
 
 ### Section 3 - Vision and Future Prospects
 
@@ -147,7 +246,6 @@ Contact
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-<!-- CONTACT -->
 ## Contact
 
 If you have any questions or feedback, feel free to reach out:
