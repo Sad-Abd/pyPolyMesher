@@ -532,19 +532,24 @@ def mesh_assessment(Node, Element):
     
     
     mesh_AR = []
+    all_lengthes = []
     for elem in Element:
         lengthes = []
         elem2 = np.roll(elem, 1)
         for e1,e2 in zip(elem,elem2):
             lengthes.append(np.sqrt(np.sum((Node[e1]-Node[e2])**2)))
         mesh_AR.append(max(lengthes)/min(lengthes))
+        all_lengthes += lengthes
     
     max_mesh_AR, mean_mesh_AR = max(mesh_AR), sum(mesh_AR)/len(mesh_AR)
+    avg_length = sum(all_lengthes)/len(all_lengthes)
     
     assessment["Max. Mesh AR"], assessment["Average Mesh AR"] = max_mesh_AR, mean_mesh_AR
+    assessment["Avg. Length"] = avg_length
     
     print(f"Max. Aspect Ratio : {max_mesh_AR}")
     print(f"Avg. Aspect Ratio : {mean_mesh_AR}")
+    print(f"Avg. Length : {avg_length}")
     
     areas = []
     

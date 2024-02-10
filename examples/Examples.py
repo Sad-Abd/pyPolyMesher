@@ -36,6 +36,7 @@ from pyPolyMesher import PolyMesher, Domain, mesh_assessment
 # # ----------------------------- Horn Domain ------------------------------------------
 
 # from pyPolyMesher.exampleDomains import HornDomain
+# HornDomain.Plot()
 # Node, Element, Supp, Load, P = PolyMesher(HornDomain, 150, 50, anim=True)
 
 # # --------------------------Wrench Domain------------------------------------------
@@ -47,7 +48,7 @@ from pyPolyMesher import PolyMesher, Domain, mesh_assessment
 # # ------------------------- Michell Domain ---------------------------------------
 
 # from pyPolyMesher.exampleDomains import MichellDomain
-
+# MichellDomain.Plot()
 # Node, Element, Supp, Load, P = PolyMesher(MichellDomain, 20, 100)
 
 # # with fixed points
@@ -64,7 +65,7 @@ from pyPolyMesher import PolyMesher, Domain, mesh_assessment
 # SuspensionDomain.PFix = [[2, 2], [2, 16], [20, 2.5]]
 # Node, Element, Supp, Load, P = PolyMesher(SuspensionDomain, 750, 150)
 
-### --------------------------- Cook's Membrane Domain -----------------------------------------
+# ## --------------------------- Cook's Membrane Domain -----------------------------------------
 
 # from pyPolyMesher.exampleDomains import CookDomain
 # CookDomain.Plot()
