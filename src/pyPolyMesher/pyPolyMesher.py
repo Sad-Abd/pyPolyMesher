@@ -119,16 +119,24 @@ class Domain:
             np.linspace(self.BdBox[2], self.BdBox[3], n),
         )
         points = np.hstack([x.reshape((-1, 1)), y.reshape((-1, 1))])
-
         sdf = self.SDF(points)[:, -1]
-        inner = np.where(sdf <= 0, 0, 1)
 
-        plt.imshow(
+        inner = np.where(sdf <= 0, 1, 0)
+
+        _, ax = plt.subplots(figsize=(8, 6))
+        _ = ax.imshow(
             inner.reshape((n, n)),
             extent=(self.BdBox[0], self.BdBox[1], self.BdBox[2], self.BdBox[3]),
             origin="lower",
-            cmap="gray",
+            cmap="Purples",
+            alpha=0.8,
         )
+        ax.contour(x, y, sdf.reshape((n, n)), levels=[0], colors="gold", linewidths=2)
+        ax.set_xlabel("X", fontweight="bold")
+        ax.set_ylabel("Y", fontweight="bold")
+        ax.set_title("Domain Visualization", fontweight="bold", fontsize=16)
+        ax.set_aspect("equal")
+
         plt.show()
 
 
@@ -527,35 +535,38 @@ def PolyMshr_PlotMsh(Node, Element, NElem, Supp=None, Load=None, wait=False):
     else:
         plt.show()
 
+
 def mesh_assessment(Node, Element):
     assessment = {}
-    
-    
+
     mesh_AR = []
     all_lengthes = []
     for elem in Element:
         lengthes = []
         elem2 = np.roll(elem, 1)
-        for e1,e2 in zip(elem,elem2):
-            lengthes.append(np.sqrt(np.sum((Node[e1]-Node[e2])**2)))
-        mesh_AR.append(max(lengthes)/min(lengthes))
+        for e1, e2 in zip(elem, elem2):
+            lengthes.append(np.sqrt(np.sum((Node[e1] - Node[e2]) ** 2)))
+        mesh_AR.append(max(lengthes) / min(lengthes))
         all_lengthes += lengthes
-    
-    max_mesh_AR, mean_mesh_AR = max(mesh_AR), sum(mesh_AR)/len(mesh_AR)
-    avg_length = sum(all_lengthes)/len(all_lengthes)
-    
-    assessment["Max. Mesh AR"], assessment["Average Mesh AR"] = max_mesh_AR, mean_mesh_AR
+
+    max_mesh_AR, mean_mesh_AR = max(mesh_AR), sum(mesh_AR) / len(mesh_AR)
+    avg_length = sum(all_lengthes) / len(all_lengthes)
+
+    assessment["Max. Mesh AR"], assessment["Average Mesh AR"] = (
+        max_mesh_AR,
+        mean_mesh_AR,
+    )
     assessment["Avg. Length"] = avg_length
-    
+
     print(f"Max. Aspect Ratio : {max_mesh_AR}")
     print(f"Avg. Aspect Ratio : {mean_mesh_AR}")
     print(f"Avg. Length : {avg_length}")
-    
+
     areas = []
-    
+
     for elem in Element:
-        polygon_vertices = Node[elem,:]
-    
+        polygon_vertices = Node[elem, :]
+
         vx = polygon_vertices[:, 0]
         vy = polygon_vertices[:, 1]
         vxs = np.roll(vx, -1)
@@ -563,13 +574,15 @@ def mesh_assessment(Node, Element):
         temp = vx * vys - vy * vxs
         area = 0.5 * np.sum(temp)
         areas.append(area)
-    
+
     range_areas = (min(areas), max(areas))
     standard_deviation = np.std(areas)
-    assessment["Range of Areas"], assessment["Standard Deviation of Areas"] = range_areas, standard_deviation
-    
-    
+    assessment["Range of Areas"], assessment["Standard Deviation of Areas"] = (
+        range_areas,
+        standard_deviation,
+    )
+
     print(f"Range of Areas : {range_areas[0]} - {range_areas[1]}")
     print(f"Standard Deviation of Areas : {standard_deviation}")
-    
+
     return assessment
