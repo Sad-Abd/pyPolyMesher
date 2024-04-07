@@ -537,29 +537,55 @@ def PolyMshr_PlotMsh(Node, Element, NElem, Supp=None, Load=None, wait=False):
 
 
 def mesh_assessment(Node, Element):
+    """
+    Assesses the quality of a mesh based on element aspect ratio and element area.
+
+    This function calculates the following mesh quality metrics:
+
+    * Maximum aspect ratio (AR) of all elements
+    * Average aspect ratio of all elements
+    * Average edge length across all elements
+    * Range of element areas (minimum and maximum)
+    * Standard deviation of element areas
+
+    Args:
+        Node (numpy.ndarray): Node coordinates.
+        Element (list): List of element vertices.
+
+    Returns:
+        dict: A dictionary containing the calculated mesh quality metrics.
+            - "Max. Mesh ar": Maximum aspect ratio of all elements.
+            - "Average Mesh ar": Average aspect ratio of all elements.
+            - "Avg. Length": Average edge length across all elements.
+            - "Range of Areas": Tuple containing the minimum and maximum element areas.
+            - "Standard Deviation of Areas": Standard deviation of element areas.
+
+    Prints:
+        The calculated mesh quality metrics to the console for immediate feedback.
+    """
     assessment = {}
 
-    mesh_AR = []
+    mesh_ar = []
     all_lengthes = []
     for elem in Element:
         lengthes = []
         elem2 = np.roll(elem, 1)
         for e1, e2 in zip(elem, elem2):
             lengthes.append(np.sqrt(np.sum((Node[e1] - Node[e2]) ** 2)))
-        mesh_AR.append(max(lengthes) / min(lengthes))
+        mesh_ar.append(max(lengthes) / min(lengthes))
         all_lengthes += lengthes
 
-    max_mesh_AR, mean_mesh_AR = max(mesh_AR), sum(mesh_AR) / len(mesh_AR)
+    max_mesh_ar, mean_mesh_ar = max(mesh_ar), sum(mesh_ar) / len(mesh_ar)
     avg_length = sum(all_lengthes) / len(all_lengthes)
 
     assessment["Max. Mesh AR"], assessment["Average Mesh AR"] = (
-        max_mesh_AR,
-        mean_mesh_AR,
+        max_mesh_ar,
+        mean_mesh_ar,
     )
     assessment["Avg. Length"] = avg_length
 
-    print(f"Max. Aspect Ratio : {max_mesh_AR}")
-    print(f"Avg. Aspect Ratio : {mean_mesh_AR}")
+    print(f"Max. Aspect Ratio : {max_mesh_ar}")
+    print(f"Avg. Aspect Ratio : {mean_mesh_ar}")
     print(f"Avg. Length : {avg_length}")
 
     areas = []
