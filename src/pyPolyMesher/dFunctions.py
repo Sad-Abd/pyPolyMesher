@@ -9,17 +9,19 @@ indicate points inside the shape. These functions can be used for various geomet
 computations.
 
 Functions:
-    - dCircle(P, xc, yc, r): Calculate signed distances from points to a circle.
-    - dDiff(d1, d2): Compute the signed distance field resulting from the difference
-      of two fields.
-    - dIntersect(d1, d2): Compute the signed distance field resulting from the
-      intersection of two fields.
     - dLine(P, x1, y1, x2, y2): Calculate signed distances from points to a line
       segment.
+    - dCircle(P, xc, yc, r): Calculate signed distances from points to a circle.
     - dRectangle(P, x1, x2, y1, y2): Calculate signed distances from points to a
       rectangle.
-    - dUnion(d1, d2): Compute the signed distance field resulting from the union of
-      two fields.
+    - dPolygon(P, vertices): Calculate the signed distance from points P to
+      a polygon defined by its vertices.
+    - dDiff(d1, d2): Compute the signed distance field resulting from the difference
+      of two fields.
+    - dIntersect(*ds): Compute the signed distance field resulting from the
+      intersection of two or more fields.
+    - dUnion(*ds): Compute the signed distance field resulting from the union of
+      two or more fields.
 
 These functions are designed for use in various geometric and computational
 geometry applications. For more detailed information on each function, refer to their individual
@@ -35,58 +37,7 @@ Notes:
 
 import numpy as np
 
-
-def dCircle(P, xc, yc, r):
-    """
-    Calculate the signed distance from points P to a circle defined by 
-    its center (xc, yc) and radius (r).
-
-    Parameters:
-        P (numpy.ndarray): An array of 2D points (shape: (N, 2)).
-        xc (float): X-coordinate of the circle's center.
-        yc (float): Y-coordinate of the circle's center.
-        r (float): Radius of the circle.
-
-    Returns:
-        numpy.ndarray: An array of signed distances from each point in P to the circle.
-    """
-    d = np.sqrt((P[:, 0] - xc) ** 2 + (P[:, 1] - yc) ** 2) - r
-    d = np.column_stack((d, d))
-    return d
-
-
-def dDiff(d1, d2):
-    """
-    Calculate the signed distance field resulting from the difference of
-    two distance fields (d1 and d2).
-
-    Parameters:
-        d1 (numpy.ndarray): The first distance field.
-        d2 (numpy.ndarray): The second distance field.
-
-    Returns:
-        numpy.ndarray: The resulting signed distance field.
-    """
-    d = np.column_stack((d1[:, :-1], d2[:, :-1]))
-    d = np.column_stack((d, np.maximum(d1[:, -1], -d2[:, -1])))
-    return d
-
-
-def dIntersect(d1, d2):
-    """
-    Calculate the signed distance field resulting from the intersection
-    of two distance fields (d1 and d2).
-
-    Parameters:
-        d1 (numpy.ndarray): The first distance field.
-        d2 (numpy.ndarray): The second distance field.
-
-    Returns:
-        numpy.ndarray: The resulting signed distance field.
-    """
-    d = np.column_stack((d1[:, :-1], d2[:, :-1]))
-    d = np.column_stack((d, np.maximum(d1[:, -1], d2[:, -1])))
-    return d
+# Shapes:
 
 
 def dLine(P, x1, y1, x2, y2):
@@ -112,6 +63,25 @@ def dLine(P, x1, y1, x2, y2):
     return d
 
 
+def dCircle(P, xc, yc, r):
+    """
+    Calculate the signed distance from points P to a circle defined by
+    its center (xc, yc) and radius (r).
+
+    Parameters:
+        P (numpy.ndarray): An array of 2D points (shape: (N, 2)).
+        xc (float): X-coordinate of the circle's center.
+        yc (float): Y-coordinate of the circle's center.
+        r (float): Radius of the circle.
+
+    Returns:
+        numpy.ndarray: An array of signed distances from each point in P to the circle.
+    """
+    d = np.sqrt((P[:, 0] - xc) ** 2 + (P[:, 1] - yc) ** 2) - r
+    d = np.column_stack((d, d))
+    return d
+
+
 def dRectangle(P, x1, x2, y1, y2):
     """
     Calculate the signed distance from points P to a rectangle defined
@@ -132,22 +102,7 @@ def dRectangle(P, x1, x2, y1, y2):
     return d
 
 
-def dUnion(d1, d2):
-    """
-    Calculate the signed distance field resulting from the union of two distance fields (d1 and d2).
-
-    Parameters:
-        d1 (numpy.ndarray): The first distance field.
-        d2 (numpy.ndarray): The second distance field.
-
-    Returns:
-        numpy.ndarray: The resulting signed distance field.
-    """
-    d = np.column_stack((d1[:, :-1], d2[:, :-1]))
-    d = np.column_stack((d, np.minimum(d1[:, -1], d2[:, -1])))
-    return d
-
-def is_counter_clockwise(points):
+def _is_counter_clockwise(points):
     """
     Determines if the given points form a counter-clockwise ordering in a 2D plane.
 
@@ -164,6 +119,7 @@ def is_counter_clockwise(points):
         sum_cross_product += (x2 - x1) * (y2 + y1)
     return sum_cross_product > 0
 
+
 def dPolygon(P, vertices):
     """
     Calculate the signed distance from points P to a polygon defined by its vertices.
@@ -175,10 +131,69 @@ def dPolygon(P, vertices):
     Returns:
         numpy.ndarray: An array of signed distances from each point in P to the polygon.
     """
-    if is_counter_clockwise(vertices):
+    if _is_counter_clockwise(vertices):
         vertices = vertices[::-1]
     if vertices[0] != vertices[-1]:
         vertices.append(vertices[0])
-    d = np.column_stack([dLine(P, *vertices[i], *vertices[i+1])[:,-1] for i in range(len(vertices)-1)])
+    d = np.column_stack(
+        [
+            dLine(P, *vertices[i], *vertices[i + 1])[:, -1]
+            for i in range(len(vertices) - 1)
+        ]
+    )
     d = np.column_stack((d, np.max(d, axis=1)))
+    return d
+
+
+# Boolean Operations:
+
+
+def dDiff(d1, d2):
+    """
+    Calculate the signed distance field resulting from the difference of
+    two distance fields (d1 and d2).
+
+    Parameters:
+        d1 (numpy.ndarray): The first distance field.
+        d2 (numpy.ndarray): The second distance field.
+
+    Returns:
+        numpy.ndarray: The resulting signed distance field.
+    """
+    d = np.column_stack((d1[:, :-1], d2[:, :-1]))
+    d = np.column_stack((d, np.maximum(d1[:, -1], -d2[:, -1])))
+    return d
+
+
+def dIntersect(*ds):
+    """
+    Calculate the signed distance field resulting from the intersection
+    of two or more distance fields.
+
+    Parameters:
+        *ds (numpy.ndarray): Distance fields to be intersected.
+
+    Returns:
+        numpy.ndarray: The resulting signed distance field.
+    """
+
+    d = np.column_stack([each[:, :-1] for each in ds])
+    d = np.column_stack((d, np.maximum.reduce([each[:, -1] for each in ds])))
+
+    return d
+
+
+def dUnion(*ds):
+    """
+    Calculate the signed distance field resulting from the union
+    of two or more distance fields.
+
+    Parameters:
+        *ds (numpy.ndarray): Distance fields to be intersected.
+
+    Returns:
+        numpy.ndarray: The resulting signed distance field.
+    """
+    d = np.column_stack([each[:, :-1] for each in ds])
+    d = np.column_stack((d, np.minimum.reduce([each[:, -1] for each in ds])))
     return d

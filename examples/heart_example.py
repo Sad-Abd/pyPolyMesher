@@ -46,9 +46,9 @@ def SDF2(p, r=5.5):
     #    Create a triangle which base is the line that
     #    connects tangent points and the vertex point is heart bottom tip
 
-    dl = dIntersect(dIntersect(line1, line2), line3)
+    dl = dIntersect(line1, line2, line3)
 
-    d = dUnion(dUnion(circle1, circle2), dl)
+    d = dUnion(circle1, circle2, dl)
 
     return d
 
