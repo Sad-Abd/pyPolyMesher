@@ -74,16 +74,29 @@ from pyPolyMesher import PolyMesher, Domain, mesh_assessment
 
 ### --------------------------- DXF Polygon Domain -----------------------------------------
 
+# Import necessary functions and modules
 from pyPolyMesher.dxfImporter import dxf_polygon
 from pyPolyMesher.dFunctions import dPolygon
 
+# Specify the path to the DXF file containing the polygon
 dxf_file_path = 'examples/polygon1.dxf'
+
+# Import the polygon from the DXF file
 v = dxf_polygon(dxf_file_path)
 
+# Define a Signed Distance Function (SDF) using the imported polygon
 SDF = lambda P: dPolygon(P, v)
+
+# Create a Domain object representing the DXF Polygon Domain
 dxfDomain = Domain("DXF Polygon Domain", [0,100,0,100], SDF)
+
+# Plot the DXF Polygon Domain
 dxfDomain.Plot()
+
+# Generate mesh for the DXF Polygon Domain using PolyMesher
+# Specify the desired number of elements (NElem) and maximum iterations (MaxIter)
 Node, Element, Supp, Load, P = PolyMesher(dxfDomain, 50, 100)
+
 mesh_assessment(Node, Element)
 
 # --------------------------- How to mesh a new domain -----------------------------------------
