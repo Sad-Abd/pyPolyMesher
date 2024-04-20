@@ -184,8 +184,14 @@ mesh_assessment(Node, Element)
 ```
 ![polygon_dxf_mesh](images/polygon_dxf_mesh.png)
 
+### Custom Domain: Heart Example
 
-See [Examples.py](examples/Examples.py) for more examples.
+The custom domain build from the SDF definition of heart geometry is available at [heart_example.py](examples/heart_example.py).
+
+![heart_domain](images/heart_domain.png)
+![heart_mesh](images/heart_mesh.png)
+
+See [Examples.py](examples/Examples.py) and [Example Notebook](examples/Examples.ipynb) for more examples.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -194,25 +200,14 @@ See [Examples.py](examples/Examples.py) for more examples.
 
 ### Section 1 - Current Focus and Issue Resolution
 
-1. ~~Translate other domain codes.~~
-2. ~~Add docstrings and comments to the following files:~~
-   - ~~pyPolyMesher~~
-   - ~~pydFunction~~
-   - ~~Domains~~
-3. ~~Make the resequence function work properly ([Issue #3](https://github.com/Sad-Abd/pyPolyMesher/issues/3)).~~
-4. ~~Transform Domain definitions into classes using Object-Oriented Programming (OOP) principles.~~
-5. ~~Rethink the file hierarchy and user experience.~~
-6. Use Jupyter notebook for `Examples.py`.
-7. Use Jupyter notebook to illustrate `Domain` creation.
-8. Define `Domain` from `dxf` files
+1. Define `Domain` from `dxf` files
     * ~~Polygon importer~~
     * Circle importer
     * Spline importer
     * Automatic SDF for geometries
-9. Add mesh quality assessments
+2. Add mesh quality assessments
     * ~~Aspect Ratio~~
     * ~~Standard Deviation of Elements Areas~~
-10. Add some example meshes to the **README**.
 
 ### Section 2 - Upcoming Priorities
 1. Enhance the **README** with more detailed information.
