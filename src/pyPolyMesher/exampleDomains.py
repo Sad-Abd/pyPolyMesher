@@ -131,24 +131,24 @@ def _HornSDF(P):
 
 HornDomain = Domain("Horn Domain", [-1, 1, 0, 1], _HornSDF)
 
-def _MbbSDF(P, BdBox = [0, 3, 0, 1]):
-    Dist = dRectangle(P, BdBox[0], BdBox[1], BdBox[2], BdBox[3])
+def _MbbSDF(P):
+    Dist = dRectangle(P, 0, 3, 0, 1)
     return Dist
 
 def _MbbBC(Node, BdBox):
     eps = 0.1 * np.sqrt((BdBox[1] - BdBox[0]) *
                         (BdBox[3] - BdBox[2]) / Node.shape[0])
-    LeftEdgeNodes = np.where(np.abs(Node[:, 0] - BdBox[0]) < eps)[0]
+    LeftEdgeNodes = np.where(np.abs(Node[:, 0] - 0) < eps)[0]
     LeftUpperNode = np.where(
         np.logical_and(
-            np.abs(Node[:, 0] - BdBox[0]
-                    ) < eps, np.abs(Node[:, 1] - BdBox[3]) < eps
+            np.abs(Node[:, 0] - 0
+                    ) < eps, np.abs(Node[:, 1] - 1) < eps
         )
     )[0]
     RightBottomNode = np.where(
         np.logical_and(
-            np.abs(Node[:, 0] - BdBox[1]
-                    ) < eps, np.abs(Node[:, 1] - BdBox[2]) < eps
+            np.abs(Node[:, 0] - 3
+                    ) < eps, np.abs(Node[:, 1] - 0) < eps
         )
     )[0]
     FixedNodes = np.concatenate((LeftEdgeNodes, RightBottomNode))
@@ -161,4 +161,4 @@ def _MbbBC(Node, BdBox):
     x = [Supp, Load]
     return x
 
-MbbDomain = Domain("Mbb Domain", [0, 3, 0, 1], _MbbSDF, _MbbBC)
+MbbDomain = Domain("Mbb Domain", [-0.5, 3.5, -0.5, 1.5], _MbbSDF, _MbbBC)
