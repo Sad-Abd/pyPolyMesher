@@ -95,17 +95,12 @@ This part explains how to install and use this package.
 
 ### Installation
 
-Since pyPolyMesher is not published on PyPI [_yet_], you need to clone the repository:
+You can install this package using pip:
+```
+pip install PolyMesher
+```
 
-```
-git clone https://github.com/Sad-Abd/pyPolyMesher.git
-```
-
-Then install it using pip:
-
-```
-pip install ./pyPolyMesher
-```
+Please note that `pyPolyMesher` is published as `PolyMesher` on PYPI.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
