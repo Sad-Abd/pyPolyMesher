@@ -11,6 +11,8 @@ computations.
 Functions:
     - dLine(P, x1, y1, x2, y2): Calculate signed distances from points to a line
       segment.
+    - dLineExact(P, x1, y1, x2, y2): Calculate the exact signed distance 
+      from points to a line segment.
     - dCircle(P, xc, yc, r): Calculate signed distances from points to a circle.
     - dRectangle(P, x1, x2, y1, y2): Calculate signed distances from points to a
       rectangle.
@@ -62,6 +64,52 @@ def dLine(P, x1, y1, x2, y2):
     d = np.column_stack((d, d))
     return d
 
+def dLineExact(P, x1, y1, x2, y2):
+    """
+    Calculate the exact signed distance from points P to a line segment defined
+    by two endpoints (x1, y1) and (x2, y2).
+
+    This function accurately handles cases where points are close to the line segment
+    or its endpoints, by projecting points onto the line segment itself and calculating
+    distances to the closest endpoint for points outside the segment.
+
+    Parameters:
+        P (numpy.ndarray): An array of 2D points (shape: (N, 2)).
+        x1 (float): X-coordinate of the first endpoint of the line segment.
+        y1 (float): Y-coordinate of the first endpoint of the line segment.
+        x2 (float): X-coordinate of the second endpoint of the line segment.
+        y2 (float): Y-coordinate of the second endpoint of the line segment.
+
+    Returns:
+        numpy.ndarray: An array of signed distances from each point in P to the line segment.
+    """
+    # Vector from point (x1, y1) to point (x2, y2)
+    line_vec = np.array([x2 - x1, y2 - y1])
+    line_len = np.linalg.norm(line_vec)
+    line_unitvec = line_vec / line_len
+
+    # Vector from point (x1, y1) to each point in P
+    vec_to_point = P - np.array([x1, y1])
+
+    # Project the vector to the line and calculate distance
+    proj_lengths = np.dot(vec_to_point, line_unitvec)
+    proj_points = np.outer(proj_lengths, line_unitvec) + np.array([x1, y1])
+
+    # Calculate the distances to the line segment
+    d = np.linalg.norm(proj_points - P, axis=1)
+
+    # Find points that are outside the segment and calculate distances to the closest endpoint
+    outside_start = proj_lengths < 0
+    outside_end = proj_lengths > line_len
+    d[outside_start] = np.linalg.norm(P[outside_start] - np.array([x1, y1]), axis=1)
+    d[outside_end] = np.linalg.norm(P[outside_end] - np.array([x2, y2]), axis=1)
+
+    # Calculate signed distances
+    perp_vec = np.array([-line_unitvec[1], line_unitvec[0]])
+    sign = np.sign(np.dot(vec_to_point, perp_vec))
+    signed_distances = d * sign
+
+    return np.column_stack((signed_distances, signed_distances))
 
 def dCircle(P, xc, yc, r):
     """
