@@ -168,6 +168,38 @@ def _is_counter_clockwise(points):
     return sum_cross_product > 0
 
 
+def _is_point_in_polygon(P, vertices):
+    """
+    Determine if points are inside a polygon using the ray-casting algorithm.
+
+    Parameters:
+        P (numpy.ndarray): An array of 2D points (shape: (N, 2)).
+        vertices (list): A list of vertices defining the polygon.
+
+    Returns:
+        numpy.ndarray: An array of boolean values indicating if each point is inside the polygon.
+    """
+    px, py = P[:, 0], P[:, 1]
+    n = len(vertices)
+
+    inside = np.zeros(px.shape, dtype=bool)
+
+    for i in range(n):
+        x1, y1 = vertices[i]  # Get the coordinates of the current vertex
+        x2, y2 = vertices[(i + 1) % n]  # Get the coordinates of the next vertex (wrapping around)
+
+        # Check if the point's y-coordinate is between the y-coordinates of the current edge's vertices
+        cond1 = (y1 > py) != (y2 > py)
+
+        # Calculate the x-coordinate of the intersection of the polygon edge with a horizontal line through the point
+        # Then check if the point's x-coordinate is to the left of this intersection
+        cond2 = px < (x2 - x1) * (py - y1) / (y2 - y1) + x1
+
+        # If both conditions are met, toggle the 'inside' flag
+        inside ^= cond1 & cond2
+
+    return inside
+
 def dPolygon(P, vertices):
     """
     Calculate the signed distance from points P to a polygon defined by its vertices.
@@ -183,14 +215,22 @@ def dPolygon(P, vertices):
         vertices = vertices[::-1]
     if vertices[0] != vertices[-1]:
         vertices.append(vertices[0])
-    d = np.column_stack(
-        [
-            dLine(P, *vertices[i], *vertices[i + 1])[:, -1]
-            for i in range(len(vertices) - 1)
-        ]
-    )
-    d = np.column_stack((d, np.max(d, axis=1)))
-    return d
+
+    # Calculate distance to each edge
+    distances = np.array(
+        [dLineExact(P, *vertices[i], *vertices[i + 1])[:,-1] for i in range(len(vertices) - 1)]
+    ).T
+
+    # Get the minimum distance (considering absolute values for accurate distance calculation)
+    min_distances = np.min(np.abs(distances), axis=1)
+
+    # Determine if the points are inside or outside the polygon
+    inside = _is_point_in_polygon(P, vertices)
+
+    # Apply the correct sign
+    signed_distances = min_distances * (inside * -2 + 1)
+
+    return np.column_stack((distances, signed_distances))
 
 
 # Boolean Operations:
