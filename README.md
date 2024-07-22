@@ -69,9 +69,9 @@
 Key capabilities:
 
 - Define 2D domains mathematically using signed distance functions
-- Built-in library of SDF primitives (circles, rectangles etc.) and operations to construct complex domains
+- Built-in library of SDF primitives (circles, rectangles, polygons, etc.) and operations to construct complex domains
 - Ability to define custom SDFs for new domain geometries
-- Generate unstructured triangular/polygonal meshes adapted to domains
+- Generate unstructured polygonal meshes adapted to domains
 - Apply boundary conditions and mark fixed points
 - Assess mesh quality metrics like element aspect ratio
 - Animate mesh generation process
@@ -81,7 +81,7 @@ By leveraging SDFs to represent domains, pyPolyMesher can capture intricate geom
 
 The package provides Lloyd's algorithm for efficient and robust meshing of arbitrary SDF-based domains. Researchers can conveniently translate geometric constructs and concepts into code using the SDF formalism.
 
-Overall, pyPolyMesher simplifies the entire workflow - from domain specification to quality mesh generation to numerical analysis.
+Overall, pyPolyMesher simplifies the entire workflow - from domain specification to quality polygonal mesh generation to numerical analysis.
 
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
