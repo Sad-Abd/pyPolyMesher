@@ -5,7 +5,7 @@ with open("README.md", "r", encoding = "utf-8") as fh:
 
 setup(
     name="PolyMesher",
-    version="1.0.1",
+    version="1.0.2",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
     author="Sad-Abd",
