@@ -105,7 +105,7 @@ def dLineExact(P, x1, y1, x2, y2):
     d[outside_end] = np.linalg.norm(P[outside_end] - np.array([x2, y2]), axis=1)
 
     # Calculate signed distances
-    perp_vec = np.array([-line_unitvec[1], line_unitvec[0]])
+    perp_vec = np.array([line_unitvec[1], -line_unitvec[0]])
     sign = np.sign(np.dot(vec_to_point, perp_vec))
     signed_distances = d * sign
 
