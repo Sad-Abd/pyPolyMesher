@@ -34,6 +34,8 @@ import matplotlib.pyplot as plt
 from scipy.spatial import Voronoi, voronoi_plot_2d
 from scipy.sparse import csr_matrix, csgraph
 
+from . import progress
+
 
 class Domain:
     """
@@ -166,7 +168,7 @@ def PolyMesher(Domain, NElem, MaxIter, P=None, anim=False):
     PFix = np.array(Domain.PFix).reshape((-1, 2))
     Area = (BdBox[1] - BdBox[0]) * (BdBox[3] - BdBox[2])
     Pc = P.copy()
-
+    bar = progress.Bar(MaxIter, enabled=True)
     while It <= MaxIter and Err > Tol:
         Alpha = c * np.sqrt(
             Area / NElem
@@ -190,7 +192,8 @@ def PolyMesher(Domain, NElem, MaxIter, P=None, anim=False):
             * NElem
             / (Area**1.5)
         )
-        print(f"It: {It}   Error: {Err}")
+        # print(f"It: {It}   Error: {Err}")
+        bar.increment(1, Err)
         It += 1
 
         if (anim == True) & (NElem <= 2000):
@@ -205,6 +208,8 @@ def PolyMesher(Domain, NElem, MaxIter, P=None, anim=False):
     BC = Domain.BndryCnds(Node)
     Supp = BC[0]
     Load = BC[1]
+
+    bar.done()
 
     PolyMshr_PlotMsh(Node, Element, NElem, Supp, Load, wait=True)
 
