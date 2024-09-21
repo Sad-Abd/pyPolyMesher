@@ -64,6 +64,7 @@ def dLine(P, x1, y1, x2, y2):
     d = np.column_stack((d, d))
     return d
 
+
 def dLineExact(P, x1, y1, x2, y2):
     """
     Calculate the exact signed distance from points P to a line segment defined
@@ -110,6 +111,7 @@ def dLineExact(P, x1, y1, x2, y2):
     signed_distances = d * sign
 
     return np.column_stack((signed_distances, signed_distances))
+
 
 def dCircle(P, xc, yc, r):
     """
@@ -186,19 +188,27 @@ def _is_point_in_polygon(P, vertices):
 
     for i in range(n):
         x1, y1 = vertices[i]  # Get the coordinates of the current vertex
-        x2, y2 = vertices[(i + 1) % n]  # Get the coordinates of the next vertex (wrapping around)
+        x2, y2 = vertices[
+            (i + 1) % n
+        ]  # Get the coordinates of the next vertex (wrapping around)
 
         # Check if the point's y-coordinate is between the y-coordinates of the current edge's vertices
         cond1 = (y1 > py) != (y2 > py)
 
-        # Calculate the x-coordinate of the intersection of the polygon edge with a horizontal line through the point
-        # Then check if the point's x-coordinate is to the left of this intersection
-        cond2 = px < (x2 - x1) * (py - y1) / (y2 - y1) + x1
+        # Handle the case where the edge is horizontal
+        if y1 == y2:
+            # If the point's y-coordinate matches the horizontal edge, check if it's within the x-range of the edge
+            cond2 = (py == y1) & (np.minimum(x1, x2) <= px) & (px <= np.maximum(x1, x2))
+        else:
+            # Calculate the x-coordinate of the intersection of the polygon edge with a horizontal line through the point
+            # Then check if the point's x-coordinate is to the left of this intersection
+            cond2 = px < (x2 - x1) * (py - y1) / (y2 - y1) + x1
 
         # If both conditions are met, toggle the 'inside' flag
         inside ^= cond1 & cond2
 
     return inside
+
 
 def dPolygon(P, vertices):
     """
@@ -218,7 +228,10 @@ def dPolygon(P, vertices):
 
     # Calculate distance to each edge
     distances = np.array(
-        [dLineExact(P, *vertices[i], *vertices[i + 1])[:,-1] for i in range(len(vertices) - 1)]
+        [
+            dLineExact(P, *vertices[i], *vertices[i + 1])[:, -1]
+            for i in range(len(vertices) - 1)
+        ]
     ).T
 
     # Get the minimum distance (considering absolute values for accurate distance calculation)
