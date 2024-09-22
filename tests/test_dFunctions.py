@@ -67,26 +67,46 @@ class TestSignedDistanceFields:
         result = dPolygon(P, vertices)
         np.testing.assert_array_almost_equal(result, expected)
 
-    def test_dDiff(self):
-        d1 = np.array([[1, 1], [2, 2]])
-        d2 = np.array([[1, 1], [2, 2]])
-        expected = np.array([[1, 1, 1], [2, 2, 2]])
-        result = dDiff(d1, d2)
-        np.testing.assert_array_almost_equal(result, expected)
+    @pytest.fixture
+    def point_grid(self):
+        x = np.linspace(-5, 5, 11)
+        y = np.linspace(-5, 5, 11)
+        X, Y = np.meshgrid(x, y)
+        return np.column_stack((X.ravel(), Y.ravel()))
 
-    def test_dIntersect(self):
-        d1 = np.array([[1, 1], [2, 2]])
-        d2 = np.array([[1, 1], [2, 2]])
-        expected = np.array([[1, 1, 1], [2, 2, 2]])
-        result = dIntersect(d1, d2)
-        np.testing.assert_array_almost_equal(result, expected)
+    def test_dDiff(self, point_grid):
+        circle = dCircle(point_grid, 0, 0, 3)
+        rectangle = dRectangle(point_grid, -2, 2, -1, 1)
 
-    def test_dUnion(self):
-        d1 = np.array([[1, 1], [2, 2]])
-        d2 = np.array([[1, 1], [2, 2]])
-        expected = np.array([[1, 1, 1], [2, 2, 2]])
-        result = dUnion(d1, d2)
-        np.testing.assert_array_almost_equal(result, expected)
+        result = dDiff(circle, rectangle)
+
+        # Expected: positive inside the circle but outside the rectangle,
+        # negative inside both shapes, and positive outside the circle
+        expected = np.maximum(circle[:, -1], -rectangle[:, -1])
+
+        np.testing.assert_array_almost_equal(result[:, -1], expected)
+
+    def test_dIntersect(self, point_grid):
+        circle1 = dCircle(point_grid, -1, 0, 2)
+        circle2 = dCircle(point_grid, 1, 0, 2)
+
+        result = dIntersect(circle1, circle2)
+
+        # Expected: negative inside both circles, positive outside either circle
+        expected = np.maximum(circle1[:, -1], circle2[:, -1])
+
+        np.testing.assert_array_almost_equal(result[:, -1], expected)
+
+    def test_dUnion(self, point_grid):
+        circle = dCircle(point_grid, 2, 2, 1.5)
+        rectangle = dRectangle(point_grid, -3, 0, -1, 1)
+
+        result = dUnion(circle, rectangle)
+
+        # Expected: negative inside either shape, positive outside both shapes
+        expected = np.minimum(circle[:, -1], rectangle[:, -1])
+
+        np.testing.assert_array_almost_equal(result[:, -1], expected)
 
 
 if __name__ == "__main__":
