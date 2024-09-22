@@ -571,7 +571,7 @@ def PolyMshr_PlotMsh(Node, Element, NElem, Supp=None, Load=None, wait=False):
         plt.show()
 
 
-def mesh_assessment(Node, Element, domain_area=0):
+def mesh_assessment(Node, Element, domain_area=0, verbose=True):
     """
     Assesses the quality of a mesh based on element aspect ratio and element area.
 
@@ -582,10 +582,13 @@ def mesh_assessment(Node, Element, domain_area=0):
     * Average edge length across all elements
     * Range of element areas (minimum and maximum)
     * Standard deviation of element areas
+    * Total area error between domain area and total element areas
 
     Args:
         Node (numpy.ndarray): Node coordinates.
         Element (list): List of element vertices.
+        domain_area (float): Area of the domain (optional).
+        verbose (boolean): Print mesh quality metrics (optional).
 
     Returns:
         dict: A dictionary containing the calculated mesh quality metrics.
@@ -594,7 +597,7 @@ def mesh_assessment(Node, Element, domain_area=0):
             - "Avg. Length": Average edge length across all elements.
             - "Range of Areas": Tuple containing the minimum and maximum element areas.
             - "Standard Deviation of Areas": Standard deviation of element areas.
-
+            - "Total Area Error (%)": Total area error between domain area and total element areas
     Prints:
         The calculated mesh quality metrics to the console for immediate feedback.
     """
@@ -619,10 +622,6 @@ def mesh_assessment(Node, Element, domain_area=0):
     )
     assessment["Avg. Length"] = avg_length
 
-    print(f"Max. Aspect Ratio : {max_mesh_ar}")
-    print(f"Avg. Aspect Ratio : {mean_mesh_ar}")
-    print(f"Avg. Length : {avg_length}")
-
     areas = []
 
     for elem in Element:
@@ -643,7 +642,13 @@ def mesh_assessment(Node, Element, domain_area=0):
         standard_deviation,
     )
 
-    print(f"Range of Areas : {range_areas[0]} - {range_areas[1]}")
-    print(f"Standard Deviation of Areas : {standard_deviation}")
+    if domain_area:
+        total_area = sum(areas)
+        area_error = 100 * (total_area - domain_area) / domain_area
+        assessment["Total Area Error (%)"] = area_error
+
+    if verbose:
+        for crit, val in assessment.items():
+            print(f"{crit}: {val}")
 
     return assessment
