@@ -576,7 +576,6 @@ def mesh_assessment(Node, Element, domain_area=0, verbose=True):
     Assesses the quality of a mesh based on element aspect ratio and element area.
 
     This function calculates the following mesh quality metrics:
-
     * Maximum aspect ratio (AR) of all elements
     * Average aspect ratio of all elements
     * Average edge length across all elements
@@ -585,65 +584,53 @@ def mesh_assessment(Node, Element, domain_area=0, verbose=True):
     * Total area error between domain area and total element areas
 
     Args:
-        Node (numpy.ndarray): Node coordinates.
-        Element (list): List of element vertices.
-        domain_area (float): Area of the domain (optional).
-        verbose (boolean): Print mesh quality metrics (optional).
+    Node (numpy.ndarray): Node coordinates.
+    Element (list): List of element vertices.
+    domain_area (float): Area of the domain (optional).
+    verbose (boolean): Print mesh quality metrics (optional).
 
     Returns:
-        dict: A dictionary containing the calculated mesh quality metrics.
-            - "Max. Mesh ar": Maximum aspect ratio of all elements.
-            - "Average Mesh ar": Average aspect ratio of all elements.
-            - "Avg. Length": Average edge length across all elements.
-            - "Range of Areas": Tuple containing the minimum and maximum element areas.
-            - "Standard Deviation of Areas": Standard deviation of element areas.
-            - "Total Area Error (%)": Total area error between domain area and total element areas
+    dict: A dictionary containing the calculated mesh quality metrics.
+    - "Max. Mesh AR": Maximum aspect ratio of all elements.
+    - "Average Mesh AR": Average aspect ratio of all elements.
+    - "Avg. Length": Average edge length across all elements.
+    - "Range of Areas": Tuple containing the minimum and maximum element areas.
+    - "Standard Deviation of Areas": Standard deviation of element areas.
+    - "Total Area Error (%)": Total area error between domain area and total element areas
+
     Prints:
-        The calculated mesh quality metrics to the console for immediate feedback.
+    The calculated mesh quality metrics to the console for immediate feedback.
     """
     assessment = {}
-
     mesh_ar = []
-    all_lengthes = []
-    for elem in Element:
-        lengthes = []
-        elem2 = np.roll(elem, 1)
-        for e1, e2 in zip(elem, elem2):
-            lengthes.append(np.sqrt(np.sum((Node[e1] - Node[e2]) ** 2)))
-        mesh_ar.append(max(lengthes) / min(lengthes))
-        all_lengthes += lengthes
-
-    max_mesh_ar, mean_mesh_ar = max(mesh_ar), sum(mesh_ar) / len(mesh_ar)
-    avg_length = sum(all_lengthes) / len(all_lengthes)
-
-    assessment["Max. Mesh AR"], assessment["Average Mesh AR"] = (
-        max_mesh_ar,
-        mean_mesh_ar,
-    )
-    assessment["Avg. Length"] = avg_length
-
+    all_lengths = []
     areas = []
 
     for elem in Element:
-        polygon_vertices = Node[elem, :]
+        elem_nodes = Node[elem]
+        elem_nodes_rolled = np.roll(elem_nodes, 1, axis=0)
 
-        vx = polygon_vertices[:, 0]
-        vy = polygon_vertices[:, 1]
-        vxs = np.roll(vx, -1)
-        vys = np.roll(vy, -1)
-        temp = vx * vys - vy * vxs
-        area = 0.5 * np.sum(temp)
+        # Calculate edge lengths
+        edge_vectors = elem_nodes - elem_nodes_rolled
+        lengths = np.sqrt(np.sum(edge_vectors**2, axis=1))
+
+        mesh_ar.append(np.max(lengths) / np.min(lengths))
+        all_lengths.extend(lengths)
+
+        # Calculate element area
+        vx, vy = elem_nodes[:, 0], elem_nodes[:, 1]
+        vxs, vys = np.roll(vx, -1), np.roll(vy, -1)
+        area = 0.5 * np.abs(np.sum(vx * vys - vy * vxs))
         areas.append(area)
 
-    range_areas = (min(areas), max(areas))
-    standard_deviation = np.std(areas)
-    assessment["Range of Areas"], assessment["Standard Deviation of Areas"] = (
-        range_areas,
-        standard_deviation,
-    )
+    assessment["Max. Mesh AR"] = np.max(mesh_ar)
+    assessment["Average Mesh AR"] = np.mean(mesh_ar)
+    assessment["Avg. Length"] = np.mean(all_lengths)
+    assessment["Range of Areas"] = (np.min(areas), np.max(areas))
+    assessment["Standard Deviation of Areas"] = np.std(areas)
 
     if domain_area:
-        total_area = sum(areas)
+        total_area = np.sum(areas)
         area_error = 100 * (total_area - domain_area) / domain_area
         assessment["Total Area Error (%)"] = area_error
 
