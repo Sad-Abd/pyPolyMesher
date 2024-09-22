@@ -61,6 +61,8 @@ class Domain:
         Plot(n=1000):
             Plots the domain based on the signed distance function.
 
+        CalculateArea(n=1_000_000):
+            Calculates the approximate area of the domain using the Monte Carlo method
     """
 
     def __init__(self, name, BdBox, SDF, BC=None, PFix=[]):
@@ -140,6 +142,34 @@ class Domain:
         ax.set_aspect("equal")
 
         plt.show()
+
+    def CalculateArea(self, n=1_000_000):
+        """
+        Calculates the approximate area of the domain using the Monte Carlo method.
+
+        Args:
+            n (int, optional): The number of random points to use. Default is 1,000,000.
+
+        Returns:
+            float: The calculated approximate area of the domain.
+        """
+        xmin, xmax, ymin, ymax = self.BdBox
+        total_area = (xmax - xmin) * (ymax - ymin)
+
+        # Generate random points within the bounding box
+        points = np.random.uniform(low=[xmin, ymin], high=[xmax, ymax], size=(n, 2))
+
+        # Evaluate SDF for all points at once
+        sdf_values = self.SDF(points)[:, -1]
+
+        # Count points inside the domain
+        points_inside = np.sum(sdf_values <= 0)
+
+        # Calculate the ratio and multiply by total area
+        area_ratio = points_inside / n
+        approximate_area = area_ratio * total_area
+
+        return approximate_area
 
 
 def PolyMesher(Domain, NElem, MaxIter, P=None, anim=False):
@@ -541,7 +571,7 @@ def PolyMshr_PlotMsh(Node, Element, NElem, Supp=None, Load=None, wait=False):
         plt.show()
 
 
-def mesh_assessment(Node, Element):
+def mesh_assessment(Node, Element, domain_area=0):
     """
     Assesses the quality of a mesh based on element aspect ratio and element area.
 
