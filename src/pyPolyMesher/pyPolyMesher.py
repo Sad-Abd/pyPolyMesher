@@ -190,7 +190,7 @@ def PolyMesher(Domain, NElem, MaxIter, P=None, anim=False):
         P = PolyMshr_RndPtSet(NElem, Domain)
 
     NElem = P.shape[0]
-    Tol = 5e-6  # user defined tolerance for small edges
+    Tol = 5e-6
     It = 0
     Err = 1
     c = 1.5  # constant of proportionality used for calculation of 'Alpha' should be greater than 1
