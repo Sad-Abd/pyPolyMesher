@@ -97,7 +97,8 @@ dxfDomain.Plot()
 # Specify the desired number of elements (NElem) and maximum iterations (MaxIter)
 Node, Element, Supp, Load, P = PolyMesher(dxfDomain, 50, 100)
 
-mesh_assessment(Node, Element)
+area = dxfDomain.CalculateArea()
+metrics = mesh_assessment(Node, Element, area, verbose = True)
 
 # --------------------------- How to mesh a new domain -----------------------------------------
 

@@ -52,6 +52,7 @@
         <li><a href="#internal-sdfs">Internal SDFs</a></li>
         <li><a href="#example-domains">Example Domains</a></li>
         <li><a href="#import-polygon-domain-from-dxf">Import Polygon Domain from DXF</a></li>
+        <li><a href="#custom-domain-heart-example">Custom Domain: Heart Example</a></li>
       </ol>
     </li>
     <li><a href="#roadmap">Roadmap</a></li>
@@ -133,30 +134,35 @@ from pyPolyMesher import dFunctions as DF
 7. `DF.dDiff(d1, d2)`: Calculate the signed distance field resulting from the difference of two distance fields (d1 and d2).
 
 ### Example Domains:
+<details>
+  <summary>Example Domains</summary>
 
-1. `pyPolyMesher.exampleDomains.MbbDomain`
+1. [`pyPolyMesher.exampleDomains.MbbDomain`](src/pyPolyMesher/exampleDomains.py#L164)
 
 ![MbbDomain](images/MBB_random.png)
 
-2. `pyPolyMesher.exampleDomains.HornDomain`
+2. [`pyPolyMesher.exampleDomains.HornDomain`](src/pyPolyMesher/exampleDomains.py#L132)
 
 ![HornDomain](images/Horn.png)
 
-3. `pyPolyMesher.exampleDomains.WrenchDomain`
+3. [`pyPolyMesher.exampleDomains.WrenchDomain`](src/pyPolyMesher/exampleDomains.py#L123)
 
 ![WrenchDomain](images/Wrench.png)
 
-4. `pyPolyMesher.exampleDomains.MichellDomain`
+4. [`pyPolyMesher.exampleDomains.MichellDomain`](src/pyPolyMesher/exampleDomains.py#L91)
 
 ![MichellDomain](images/Michell.png)
 
-5. `pyPolyMesher.exampleDomains.SuspensionDomain`
+5. [`pyPolyMesher.exampleDomains.SuspensionDomain`](src/pyPolyMesher/exampleDomains.py#L68)
 
 ![SuspensionDomain](images/suspension.png)
 
-6. `pyPolyMesher.exampleDomains.CookDomain`
+6. [`pyPolyMesher.exampleDomains.CookDomain`](src/pyPolyMesher/exampleDomains.py#L26)
 
 ![CooksMembrane](images/cook_mesh.png)
+
+</details>
+
 
 ### Import Polygon Domain from DXF:
 
@@ -177,9 +183,21 @@ dxfDomain.Plot()
 
 ```python
 Node, Element, Supp, Load, P = PolyMesher(dxfDomain, 50, 100)
-mesh_assessment(Node, Element)
+
+area = dxfDomain.CalculateArea()
+metrics = mesh_assessment(Node, Element, area, verbose = True)
 ```
 ![polygon_dxf_mesh](images/polygon_dxf_mesh.png)
+
+It should be noted that the `CalculateArea` method calculates the approximate area of the domain using the Monte Carlo method. 
+
+The `mesh_assessment` function calculates the following mesh quality metrics:
+-  Maximum aspect ratio (AR)
+-  Average AR
+-  Average edge length across all elements
+-  Range of element areas (minimum and maximum)
+-  Standard deviation of element areas
+-  Total area error between domain area and total element areas (obviously in case the domain area is provided)
 
 ### Custom Domain: Heart Example
 
