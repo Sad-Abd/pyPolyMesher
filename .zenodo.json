@@ -6,7 +6,7 @@
 
     ],
 
-    "description": "My project description.",
+    "description": "pyPolyMesher is a python package for generating unstructured polygonal meshes in arbitrarily defined 2D domains. It allows users to mathematically specify domains using signed distance functions (SDFs) and generates high-quality meshes adapted to the geometry and features of the domain.",
     "keywords": [
         "Mesh Generation",
         "Computational Geometry"
