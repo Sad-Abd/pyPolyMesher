@@ -1,0 +1,18 @@
+{ "creators": [
+        {
+            "name": "Abedi-Shahri, Seyed Sadjad",
+            "orcid": "0000-0003-2785-7082"
+        },
+
+    ],
+
+    "description": "My project description.",
+    "keywords": [
+        "Mesh Generation",
+        "Computational Geometry"
+    ],
+    "license": {
+        "id": "GPLv3"
+    },
+    "title": "pyPolyMesher: Generation of Polygonal Mesh"
+}
