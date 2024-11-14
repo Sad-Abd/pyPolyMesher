@@ -132,6 +132,70 @@ def dCircle(P, xc, yc, r):
     return d
 
 
+def dEllipse(P, xc, yc, a, b, theta=0.0):
+    """
+    Compute the signed distance from points P to an ellipse centered at (xc, yc),
+    with semi-axes defined by a and b, and optionally rotated by theta.
+
+    Parameters:
+    -----------
+    P : numpy.ndarray
+        Array of points with shape (N, 2) where each row is a point (x, y).
+    xc, yc : float
+        Coordinates of the ellipse center.
+    a, b : float
+        Semi-major and semi-minor axes of the ellipse.
+    theta : float, optional
+        Rotation angle of the ellipse in radians (default: 0.).
+
+    Returns:
+    --------
+    numpy.ndarray
+        Column stack of the signed distances for each point.
+    """
+
+    # Translate and rotate points
+    P_translated = P - np.array([xc, yc])
+
+    if theta != 0:
+        cos_theta = np.cos(theta)
+        sin_theta = np.sin(theta)
+        rotation_matrix = np.array([[cos_theta, -sin_theta], [sin_theta, cos_theta]])
+        P_translated = P_translated @ rotation_matrix.T
+
+    e = np.array([a, b])
+    ei = 1.0 / e
+    e2 = e * e
+    ve = ei * np.array([e2[0] - e2[1], e2[1] - e2[0]])
+    distances = np.zeros(P.shape[0])
+
+    # Iterate over each point
+    for i, p in enumerate(P_translated):
+        p_abs = np.abs(p)
+
+        # Initialize with a point on the ellipse at a 45-degree angle
+        t = np.array([np.sqrt(2) / 2, np.sqrt(2) / 2])
+
+        # Iteratively refine the estimate of the closest point on the ellipse
+        for _ in range(3):
+            v = ve * t * t * t
+            u = (p_abs - v) / np.linalg.norm(p_abs - v) * np.linalg.norm(t * e - v)
+            w = ei * (v + u)
+            t = np.clip(w, 0.0, 1.0)
+            t /= np.linalg.norm(t)
+
+        # Calculate the nearest point and signed distance
+        nearest_abs = t * e
+        dist = np.linalg.norm(p_abs - nearest_abs)
+
+        # Set distance as negative if the point is inside the ellipse
+        distances[i] = (
+            -dist if np.dot(p_abs, p_abs) < np.dot(nearest_abs, nearest_abs) else dist
+        )
+
+    return np.column_stack((distances, distances))
+
+
 def dRectangle(P, x1, x2, y1, y2):
     """
     Calculate the signed distance from points P to a rectangle defined
