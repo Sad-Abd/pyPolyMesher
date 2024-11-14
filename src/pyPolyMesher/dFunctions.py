@@ -310,7 +310,7 @@ def dPolygon(P, vertices):
     return np.column_stack((distances, signed_distances))
 
 
-def dRegularPolygon(P, xc, yc, r, n, theta=0):
+def dRegularPolygon(P, xc, yc, r, n, theta=0.0):
     """
     Calculate the signed distance from points P to a regular polygon with n sides,
     center (xc, yc), radius r, and rotation theta.
@@ -321,7 +321,7 @@ def dRegularPolygon(P, xc, yc, r, n, theta=0):
         yc (float): Y-coordinate of the polygon's center.
         r (float): Radius (distance from center to vertices).
         n (int): Number of sides.
-        theta (float): Rotation angle in radians (default: 0).
+        theta (float): Rotation angle in radians (default: 0.).
 
     Returns:
         numpy.ndarray: An array of signed distances from each point in P to the polygon.
@@ -332,6 +332,39 @@ def dRegularPolygon(P, xc, yc, r, n, theta=0):
 
     # Use existing dPolygon function
     return dPolygon(P, vertices)
+
+
+def dStar(P, xc, yc, r_outer, r_inner, n, theta=0.0):
+    """
+    Calculate the signed distance from points P to a star shape with n points,
+    center (xc, yc), outer radius r_outer, inner radius r_inner, and rotation theta.
+
+    Parameters:
+        P (numpy.ndarray): An array of 2D points (shape: (N, 2)).
+        xc (float): X-coordinate of the star's center.
+        yc (float): Y-coordinate of the star's center.
+        r_outer (float): Outer radius (distance from center to outer points).
+        r_inner (float): Inner radius (distance from center to inner points).
+        n (int): Number of points.
+        theta (float): Rotation angle in radians (default: 0.).
+
+    Returns:
+        numpy.ndarray: An array of signed distances from each point in P to the star.
+    """
+    # Generate vertices alternating between outer and inner points
+    num_vertices = 2 * n
+    vertices = []
+
+    for i in range(num_vertices):
+        angle = theta + (2 * np.pi * i) / num_vertices
+        radius = r_outer if i % 2 == 0 else r_inner
+        x = xc + radius * np.cos(angle)
+        y = yc + radius * np.sin(angle)
+        vertices.append((x, y))
+
+    # Use existing dPolygon function
+    return dPolygon(P, vertices)
+
 
 # Boolean Operations:
 
