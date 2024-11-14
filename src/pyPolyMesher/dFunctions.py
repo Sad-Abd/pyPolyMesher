@@ -310,6 +310,29 @@ def dPolygon(P, vertices):
     return np.column_stack((distances, signed_distances))
 
 
+def dRegularPolygon(P, xc, yc, r, n, theta=0):
+    """
+    Calculate the signed distance from points P to a regular polygon with n sides,
+    center (xc, yc), radius r, and rotation theta.
+
+    Parameters:
+        P (numpy.ndarray): An array of 2D points (shape: (N, 2)).
+        xc (float): X-coordinate of the polygon's center.
+        yc (float): Y-coordinate of the polygon's center.
+        r (float): Radius (distance from center to vertices).
+        n (int): Number of sides.
+        theta (float): Rotation angle in radians (default: 0).
+
+    Returns:
+        numpy.ndarray: An array of signed distances from each point in P to the polygon.
+    """
+    # Generate vertices
+    angles = np.linspace(0, 2 * np.pi, n + 1)[:-1] + theta
+    vertices = [(xc + r * np.cos(angle), yc + r * np.sin(angle)) for angle in angles]
+
+    # Use existing dPolygon function
+    return dPolygon(P, vertices)
+
 # Boolean Operations:
 
 
