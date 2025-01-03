@@ -6,7 +6,8 @@
 [![Made with love in SUT (Iran)](https://img.shields.io/badge/Made%20with%20%E2%9D%A4%EF%B8%8F%20in-SUT%20(Iran)-0c674a?style=for-the-badge)](https://sut.ac.ir)
 [![GitHub Stars](https://img.shields.io/github/stars/Sad-Abd/pyPolyMesher.svg?style=for-the-badge)](https://github.com/Sad-Abd/pyPolyMesher/stargazers)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.12794558.svg)](https://doi.org/10.5281/zenodo.12794558)
-
+[![PyPI Downloads](https://static.pepy.tech/badge/polymesher)](https://pepy.tech/projects/polymesher)
+[![PyPI Downloads](https://static.pepy.tech/badge/polymesher/month)](https://pepy.tech/projects/polymesher)
 
 <!-- PROJECT LOGO -->
 
