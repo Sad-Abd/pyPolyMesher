@@ -30,6 +30,8 @@
     <a href="https://github.com/Sad-Abd/pyPolyMehser/issues">Report Bug</a>
     ·
     <a href="https://github.com/Sad-Abd/pyPolyMehser/issues">Request Feature</a>
+    ·
+    <a href="#publications-using-pypolymesher">Citations</a>
   </p>
 </div>
 
@@ -248,6 +250,12 @@ Contributions are what make the open source community such an amazing place to l
 If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement".
 We appreciate your interest in pyPolyMesher!. Don't forget to give the project a star! Thanks again!
 
+## Publications Using pyPolyMesher
+
+This package has been used in the following research:
+
+- S.S. Abedi-Shahri et al. (2025). "NL-SBFEM: A pure SBFEM formulation for geometrically and materially nonlinear problems" *Engineering Analysis with Boundary Elements*. [Link](https://doi.org/10.1016/j.enganabound.2024.106085)
+- R. Dupont (2025). "An arbitrary-order Virtual Element Method for the Helmholtz equation applied to wave field calculation in port" *Results in Applied Mathematics*. [Link](https://doi.org/10.1016/j.rinam.2025.100598)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
