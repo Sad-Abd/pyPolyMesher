@@ -562,11 +562,13 @@ def PolyMshr_PlotMsh(Node, Element, NElem, Supp=None, Load=None, wait=False, Pfi
         / Node.shape[0]
     )
     col = []
-    if Pfix:
+    Pfix_arr = np.asarray(Pfix)
+    if Pfix_arr.size > 0:
+        Pfix_arr = Pfix_arr.reshape((-1, 2))
         for node in Node_set:
             # Calculate distances from current node to all fixed points
             # Reshape node to (1,2) for broadcasting
-            distances = np.linalg.norm(Pfix - node.reshape(1, 2), axis=1)
+            distances = np.linalg.norm(Pfix_arr - node.reshape(1, 2), axis=1)
 
             # Check if any fixed point is closer than threshold
             if np.min(distances) < eps:
