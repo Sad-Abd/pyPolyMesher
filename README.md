@@ -75,7 +75,7 @@
 Key capabilities:
 
 - Define 2D domains mathematically using signed distance functions
-- Built-in library of SDF primitives (circles, rectangles, polygons, etc.) and operations to construct complex domains
+- Built-in library of SDF primitives (circles, rectangles, ellipses, regular polygons, stars, polygons, etc.) and operations to construct complex domains
 - Ability to define custom SDFs for new domain geometries
 - Generate unstructured polygonal meshes adapted to domains
 - Apply boundary conditions and mark fixed points
@@ -129,12 +129,16 @@ Node, Element, Supp, Load, P = pyPolyMesher.PolyMesher(MichellDomain, 50, 100)
 from pyPolyMesher import dFunctions as DF
 ```
 1. `DF.dLine(P, x1, y1, x2, y2)`: Calculate the signed distance from points P to a line segment defined by two endpoints (x1, y1) and (x2, y2).
-2. `DF.dCircle(P, xc, yc, r)`: Calculate the signed distance from points P to a circle defined by its center (xc, yc) and radius (r).
-3. `DF.dRectangle(P, x1, x2, y1, y2)`: Calculate the signed distance from points P to a rectangle defined by its bottom-left (x1, y1) and top-right (x2, y2) coordinates.
-4. `DF.dPolygon(P, vertices)`: Calculate the signed distance from points P to a polygon defined by its vertices.
-5. `DF.dUnion(d1, d2)`: Calculate the signed distance field resulting from the union of two distance fields (d1 and d2).
-6. `DF.dIntersect(d1, d2)`: Calculate the signed distance field resulting from the intersection of two distance fields (d1 and d2).
-7. `DF.dDiff(d1, d2)`: Calculate the signed distance field resulting from the difference of two distance fields (d1 and d2).
+2. `DF.dLineExact(P, x1, y1, x2, y2)`: Calculate the exact signed distance from points P to a line segment defined by two endpoints (x1, y1) and (x2, y2).
+3. `DF.dCircle(P, xc, yc, r)`: Calculate the signed distance from points P to a circle defined by its center (xc, yc) and radius (r).
+4. `DF.dEllipse(P, xc, yc, a, b, theta=0.0)`: Calculate the signed distance from points P to an ellipse with semi-axes `a` and `b` and optional rotation `theta`.
+5. `DF.dRectangle(P, x1, x2, y1, y2)`: Calculate the signed distance from points P to a rectangle defined by its bottom-left (x1, y1) and top-right (x2, y2) coordinates.
+6. `DF.dPolygon(P, vertices)`: Calculate the signed distance from points P to a polygon defined by its vertices.
+7. `DF.dRegularPolygon(P, xc, yc, r, n, theta=0.0)`: Calculate the signed distance from points P to a regular polygon.
+8. `DF.dStar(P, xc, yc, r_outer, r_inner, n, theta=0.0)`: Calculate the signed distance from points P to a star-shaped polygon.
+9. `DF.dUnion(d1, d2)`: Calculate the signed distance field resulting from the union of two distance fields (d1 and d2).
+10. `DF.dIntersect(d1, d2)`: Calculate the signed distance field resulting from the intersection of two distance fields (d1 and d2).
+11. `DF.dDiff(d1, d2)`: Calculate the signed distance field resulting from the difference of two distance fields (d1 and d2).
 
 ### Example Domains:
 <details>
@@ -198,6 +202,7 @@ The `mesh_assessment` function calculates the following mesh quality metrics:
 -  Maximum aspect ratio (AR)
 -  Average AR
 -  Average edge length across all elements
+-  Shortest edge length
 -  Range of element areas (minimum and maximum)
 -  Standard deviation of element areas
 -  Total area error between domain area and total element areas (obviously in case the domain area is provided)
