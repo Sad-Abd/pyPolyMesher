@@ -1,4 +1,5 @@
-from ezdxf import readfile
+from ezdxf.filemanagement import readfile
+
 
 def dxf_polygon(file_path):
     """
@@ -16,31 +17,33 @@ def dxf_polygon(file_path):
         ValueError: If the entities in the file are neither all lines nor all polylines.
     """
     doc = readfile(file_path)
-    ents = list(doc.modelspace().query('LINE LWPOLYLINE POLYLINE'))
+    ents = list(doc.modelspace().query("LINE LWPOLYLINE POLYLINE"))
     ents_type = [e.DXFTYPE for e in ents]
-    if all(e == 'LINE' for e in ents_type):
+    if all(e == "LINE" for e in ents_type):
         vertices = []
         ents.append(ents[0])
-        for i in range(len(ents)-1):
+        for i in range(len(ents) - 1):
             p0 = (ents[i].dxf.end.x, ents[i].dxf.end.y)
-            p1 = (ents[i+1].dxf.start.x, ents[i+1].dxf.start.y)
+            p1 = (ents[i + 1].dxf.start.x, ents[i + 1].dxf.start.y)
             if p0 == p1:
                 vertices.append(p0)
             else:
-                raise ValueError(f"Lines are not connected! Check LINE#{ents[i].dxf.handle} and LINE#{ents[i+1].dxf.handle}.")
-            
-    elif all(e == 'LWPOLYLINE' for e in ents_type):
+                raise ValueError(
+                    f"Lines are not connected! Check LINE#{ents[i].dxf.handle} and LINE#{ents[i + 1].dxf.handle}."
+                )
+
+    elif all(e == "LWPOLYLINE" for e in ents_type):
         if len(ents) > 1:
             raise ValueError("Does not support multiple POLYLINE.")
 
-        vertices = [(q[0],q[1]) for q in ents[0].get_points()]
-       
-    elif all(e == 'POLYLINE' for e in ents_type):
+        vertices = [(q[0], q[1]) for q in ents[0].get_points()]
+
+    elif all(e == "POLYLINE" for e in ents_type):
         if len(ents) > 1:
             raise ValueError("Does not support multiple POLYLINE.")
-        
-        vertices = [(q.dxf.location.x,q.dxf.location.y) for q in ents[0].vertices]
-        
+
+        vertices = [(q.dxf.location.x, q.dxf.location.y) for q in ents[0].vertices]
+
     else:
-        raise ValueError("The entities in the file are not all lines or all polylines.")   
+        raise ValueError("The entities in the file are not all lines or all polylines.")
     return vertices

@@ -1,10 +1,9 @@
-import numpy as np
-from pyPolyMesher import PolyMesher, Domain, mesh_assessment
+from pyPolyMesher import Domain, PolyMesher, mesh_assessment
+from pyPolyMesher.dFunctions import dPolygon
 
 # # --------------------------- Mbb Domain ----------------------------------------
-
+# import numpy as np
 # from pyPolyMesher.exampleDomains import MbbDomain
-
 # # for structured mesh
 # nelx = 5
 # nely = 4
@@ -16,79 +15,68 @@ from pyPolyMesher import PolyMesher, Domain, mesh_assessment
 # P = np.column_stack((X.ravel(), Y.ravel()))
 # Node, Element, Supp, Load, P = PolyMesher(MbbDomain, 20, 30, P)
 # PolyMesher(MbbDomain, 20, 30, P)
-
 # # for unstructured mesh with given points (can be used to compare results with MATLAB code)
-# P = np.array([[2.60026522, 0.03321281],
-#  [0.01350291, 0.39790721],
-#  [1.06513347, 0.40730687],
-#  [2.54716707, 0.76359476],
-#  [1.29260857, 0.39074023],
-#  [2.41308243, 0.38506563],
-#  [2.22468734, 0.69673122],
-#  [0.95129956, 0.09203691],
-#  [0.6433727,  0.67682601],
-#  [2.1696533,  0.3882989 ]])
+# P = np.array(
+#     [
+#         [2.60026522, 0.03321281],
+#         [0.01350291, 0.39790721],
+#         [1.06513347, 0.40730687],
+#         [2.54716707, 0.76359476],
+#         [1.29260857, 0.39074023],
+#         [2.41308243, 0.38506563],
+#         [2.22468734, 0.69673122],
+#         [0.95129956, 0.09203691],
+#         [0.6433727, 0.67682601],
+#         [2.1696533, 0.3882989],
+#     ]
+# )
 # Node, Element, Supp, Load, P = PolyMesher(MbbDomain, 10, 50, P)
-
 # # random points
 # Node, Element, Supp, Load, P = PolyMesher(MbbDomain, 50, 100, anim=True)
-
 # # ----------------------------- Horn Domain ------------------------------------------
-
 # from pyPolyMesher.exampleDomains import HornDomain
 # HornDomain.Plot()
 # Node, Element, Supp, Load, P = PolyMesher(HornDomain, 150, 50, anim=True)
-
 # # --------------------------Wrench Domain------------------------------------------
-
 # from pyPolyMesher.exampleDomains import WrenchDomain
 # WrenchDomain.Plot()
 # Node, Element, Supp, Load, P = PolyMesher(WrenchDomain, 150, 100)
-
 # # ------------------------- Michell Domain ---------------------------------------
-
 # from pyPolyMesher.exampleDomains import MichellDomain
 # MichellDomain.Plot()
 # Node, Element, Supp, Load, P = PolyMesher(MichellDomain, 20, 100)
-
 # # with fixed points
 # MichellDomain.PFix = [5, 0]
 # Node, Element, Supp, Load, P = PolyMesher(MichellDomain, 20, 100)
-
 # # ------------------------ Suspension Domain -----------------------------------------
-
 # from pyPolyMesher.exampleDomains import SuspensionDomain
 # SuspensionDomain.Plot()
 # Node, Element, Supp, Load, P = PolyMesher(SuspensionDomain, 750, 150)
-
 # # with fixed points
 # SuspensionDomain.PFix = [[2, 2], [2, 16], [20, 2.5]]
 # Node, Element, Supp, Load, P = PolyMesher(SuspensionDomain, 750, 150)
-
 # ## --------------------------- Cook's Membrane Domain -----------------------------------------
-
 # from pyPolyMesher.exampleDomains import CookDomain
 # CookDomain.Plot()
 # Node, Element, Supp, Load, P = PolyMesher(CookDomain, 50, 200)
-
-
 ### --------------------------- DXF Polygon Domain -----------------------------------------
-
 # Import necessary functions and modules
 from pyPolyMesher.dxfImporter import dxf_polygon
-from pyPolyMesher.dFunctions import dPolygon
 
 # Specify the path to the DXF file containing the polygon
-dxf_file_path = 'examples/polygon1.dxf'
+dxf_file_path = "examples/polygon1.dxf"
 
 # Import the polygon from the DXF file
 v = dxf_polygon(dxf_file_path)
 
+
 # Define a Signed Distance Function (SDF) using the imported polygon
-SDF = lambda P: dPolygon(P, v)
+def SDF(P):
+    return dPolygon(P, v)
+
 
 # Create a Domain object representing the DXF Polygon Domain
-dxfDomain = Domain("DXF Polygon Domain", [0,100,0,100], SDF)
+dxfDomain = Domain("DXF Polygon Domain", [0, 100, 0, 100], SDF)
 
 # Plot the DXF Polygon Domain
 dxfDomain.Plot()

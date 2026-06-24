@@ -5,7 +5,7 @@ BdBox = [-10, 10, -14, 8]
 #
 # 2. Create a signed distance function
 
-from pyPolyMesher.dFunctions import dLine, dIntersect, dCircle, dUnion
+from pyPolyMesher.dFunctions import dCircle, dIntersect, dLine, dUnion
 
 
 def SDF2(p, r=5.5):

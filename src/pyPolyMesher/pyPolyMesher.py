@@ -1,7 +1,7 @@
 """
 PolyMesher Module
 
-This module provides functions for generating polygon meshes using Lloyd's algorithm. 
+This module provides functions for generating polygon meshes using Lloyd's algorithm.
 The generated polygon meshes are suitable for various computational geometry and finite element analysis applications.
 
 Functions:
@@ -19,8 +19,8 @@ Functions:
 Classes:
     - Domain: Represents a mathematically defined domain for polygonal mesh. See the class docstring for details.
 
-These functions and the 'Domain' class can be used for polygon mesh generation in computational 
-geometry applications. For more detailed information on each function and the 'Domain' class, 
+These functions and the 'Domain' class can be used for polygon mesh generation in computational
+geometry applications. For more detailed information on each function and the 'Domain' class,
 refer to their individual docstrings.
 
 Notes:
@@ -29,10 +29,10 @@ Notes:
   to make the transition from MATLAB to this code as seamless as possible for users.
 """
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+from scipy.sparse import csgraph, csr_matrix
 from scipy.spatial import Voronoi, voronoi_plot_2d
-from scipy.sparse import csr_matrix, csgraph
 
 from . import progress
 
@@ -199,6 +199,10 @@ def PolyMesher(Domain, NElem, MaxIter, P=None, anim=False):
     Area = (BdBox[1] - BdBox[0]) * (BdBox[3] - BdBox[2])
     Pc = P.copy()
     bar = progress.Bar(MaxIter, enabled=True)
+
+    allErr = []
+    Node = None
+    Element = None
     while It <= MaxIter and Err > Tol:
         Alpha = c * np.sqrt(
             Area / NElem
@@ -223,17 +227,19 @@ def PolyMesher(Domain, NElem, MaxIter, P=None, anim=False):
             / (Area**1.5)
         )
         # print(f"It: {It}   Error: {Err}")
+        allErr.append(Err)
         bar.increment(1, Err)
         It += 1
 
-        if (anim == True) & (NElem <= 2000):
-            PolyMshr_PlotMsh(Node, Element, NElem)
+        if anim and (NElem <= 2000):
+            PolyMshr_PlotMsh(Node, Element, NElem, Pfix=Domain.PFix)
 
-    Node, Element = PolyMshr_ExtrNds(Node, Element[:NElem])
+    if Element is not None:
+        Node, Element = PolyMshr_ExtrNds(Node, Element[:NElem])
 
-    Node, Element = PolyMshr_CllpsEdgs(Node, Element, 0.1)
+        Node, Element = PolyMshr_CllpsEdgs(Node, Element, 0.1)
 
-    Node, Element = PolyMshr_RsqsNds(Node, Element, NElem)
+        Node, Element = PolyMshr_RsqsNds(Node, Element, NElem)
 
     BC = Domain.BndryCnds(Node)
     Supp = BC[0]
@@ -241,7 +247,7 @@ def PolyMesher(Domain, NElem, MaxIter, P=None, anim=False):
 
     bar.done()
 
-    PolyMshr_PlotMsh(Node, Element, NElem, Supp, Load, wait=True)
+    PolyMshr_PlotMsh(Node, Element, NElem, Supp, Load, wait=True, Pfix=Domain.PFix)
 
     return Node, Element, Supp, Load, P
 
@@ -288,10 +294,13 @@ def PolyMshr_FixedPoints(P, R_P, PFix):
     """
     PP = np.vstack((P, R_P))
     for i in range(PFix.shape[0]):
-        B, I = np.sort(
-            np.sqrt((PP[:, 0] - PFix[i, 0]) ** 2 + (PP[:, 1] - PFix[i, 1]) ** 2)
-        ), np.argsort(
-            np.sqrt((PP[:, 0] - PFix[i, 0]) ** 2 + (PP[:, 1] - PFix[i, 1]) ** 2)
+        B, I = (
+            np.sort(
+                np.sqrt((PP[:, 0] - PFix[i, 0]) ** 2 + (PP[:, 1] - PFix[i, 1]) ** 2)
+            ),
+            np.argsort(
+                np.sqrt((PP[:, 0] - PFix[i, 0]) ** 2 + (PP[:, 1] - PFix[i, 1]) ** 2)
+            ),
         )
         for j in range(1, 4):
             n = PP[I[j], :] - PFix[i, :]
@@ -420,17 +429,18 @@ def PolyMshr_CllpsEdgs(Node0, Element0, Tol):
     while True:
         cEdge = []
         for ele in Element0:
-            if len(ele) < 4:
+            if ele is None or len(ele) < 4:
                 continue  # Cannot collapse triangles
-            vx = Node0[ele, 0]
-            vy = Node0[ele, 1]
+            ele_array = np.asarray(ele, dtype=int)
+            vx = Node0[ele_array, 0]
+            vy = Node0[ele_array, 1]
             nv = len(vx)
             beta = np.arctan2(vy - np.sum(vy) / nv, vx - np.sum(vx) / nv)
             beta = np.mod(
                 beta[np.roll(np.arange(len(beta)), shift=-1)] - beta, 2 * np.pi
             )
-            beta_ideal = 2 * np.pi / len(ele)
-            Edge = np.column_stack((ele, np.roll(ele, shift=-1)))
+            beta_ideal = 2 * np.pi / len(ele_array)
+            Edge = np.column_stack((ele_array, np.roll(ele_array, shift=-1)))
             cEdge.extend(Edge[beta < Tol * beta_ideal, :])
 
         if len(cEdge) == 0:
@@ -497,7 +507,7 @@ def PolyMshr_RbldLists(Node0, Element0, cNode):
     Returns:
         tuple: A tuple containing updated Node and Element.
     """
-    Element = [None] * len(Element0)
+    Element = [[]] * len(Element0)
     _, ix, jx = np.unique(cNode, return_index=True, return_inverse=True)
 
     if not np.array_equal(jx.shape, cNode.shape):
@@ -520,7 +530,7 @@ def PolyMshr_RbldLists(Node0, Element0, cNode):
     return Node, Element
 
 
-def PolyMshr_PlotMsh(Node, Element, NElem, Supp=None, Load=None, wait=False):
+def PolyMshr_PlotMsh(Node, Element, NElem, Supp=None, Load=None, wait=False, Pfix=[]):
     """
     Plot the polygon mesh with optional boundary conditions.
 
@@ -546,7 +556,27 @@ def PolyMshr_PlotMsh(Node, Element, NElem, Supp=None, Load=None, wait=False):
         plt.fill(vx, vy, "-w", edgecolor="black")
 
     Node_set = Node[list(Node_set)]
-    plt.plot(Node_set[:, 0], Node_set[:, 1], "bo", markersize=4)
+    eps = 0.1 * np.sqrt(
+        (max(Node_set[:, 0]) - min(Node_set[:, 0]))
+        * (max(Node_set[:, 1]) - min(Node_set[:, 1]))
+        / Node.shape[0]
+    )
+    col = []
+    if Pfix:
+        for node in Node_set:
+            # Calculate distances from current node to all fixed points
+            # Reshape node to (1,2) for broadcasting
+            distances = np.linalg.norm(Pfix - node.reshape(1, 2), axis=1)
+
+            # Check if any fixed point is closer than threshold
+            if np.min(distances) < eps:
+                col.append("red")
+            else:
+                col.append("blue")
+    else:
+        col = ["blue" for each in Node_set]
+    plt.scatter(Node_set[:, 0], Node_set[:, 1], c=col, s=16)
+    # plt.plot(Node_set[:, 0], Node_set[:, 1], "bo", markersize=4)
 
     if Supp is not None and len(Supp) > 0:  # Plot Supp BC if specified
         plt.scatter(
@@ -625,6 +655,7 @@ def mesh_assessment(Node, Element, domain_area=0, verbose=True):
 
     assessment["Max. Mesh AR"] = np.max(mesh_ar)
     assessment["Average Mesh AR"] = np.mean(mesh_ar)
+    assessment["Shortest Length"] = np.min(all_lengths)
     assessment["Avg. Length"] = np.mean(all_lengths)
     assessment["Range of Areas"] = (np.min(areas), np.max(areas))
     assessment["Standard Deviation of Areas"] = np.std(areas)

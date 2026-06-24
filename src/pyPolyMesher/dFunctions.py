@@ -11,7 +11,7 @@ computations.
 Functions:
     - dLine(P, x1, y1, x2, y2): Calculate signed distances from points to a line
       segment.
-    - dLineExact(P, x1, y1, x2, y2): Calculate the exact signed distance 
+    - dLineExact(P, x1, y1, x2, y2): Calculate the exact signed distance
       from points to a line segment.
     - dCircle(P, xc, yc, r): Calculate signed distances from points to a circle.
     - dRectangle(P, x1, x2, y1, y2): Calculate signed distances from points to a
