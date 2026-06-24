@@ -250,6 +250,16 @@ Contributions are what make the open source community such an amazing place to l
 If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement".
 We appreciate your interest in pyPolyMesher!. Don't forget to give the project a star! Thanks again!
 
+## v1.2 Release Notes
+
+This release focuses on reliability, test coverage, and release readiness:
+
+- Added a comprehensive automated test suite covering signed-distance functions, domain abstraction, meshing, example domains, DXF import, and progress utilities
+- Added smoke tests for the documented example script and example assets
+- Improved meshing behavior and fixed-point plotting handling
+- Hardened DXF import handling for testability and portability
+- Updated README citations and release metadata
+
 ## Publications Using pyPolyMesher
 
 This package has been used in the following research:
