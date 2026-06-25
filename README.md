@@ -207,6 +207,23 @@ The `mesh_assessment` function calculates the following mesh quality metrics:
 -  Standard deviation of element areas
 -  Total area error between domain area and total element areas (obviously in case the domain area is provided)
 
+### Boundary Accuracy and Non-convex Corners
+
+For domains with sharp or non-convex features (e.g. an L-shape), a few helpers keep
+the meshed geometry faithful to the original domain:
+
+- `reentrant_corner_seeds(corner, e1, e2, delta)`: returns fixed seeds that capture a
+  re-entrant (concave) corner, following Talischi et al. (2012, Fig. 15). Append the
+  result to a domain's `PFix`.
+- `assess_nodes_outside_domain(Node, SDF)`: reports how many nodes fall outside the
+  domain and by how much (a direct geometric error measure).
+- `project_nodes_to_domain(Node, SDF, ...)`: snaps nodes onto the domain boundary.
+
+`PolyMesher(..., snap_boundary=True)` (default) automatically snaps boundary nodes
+onto the exact boundary and removes redundant collinear boundary nodes, so the meshed
+shape matches the domain (near-zero area error). Set `snap_boundary=False` for the
+bare MATLAB-equivalent behavior.
+
 ### Custom Domain: Heart Example
 
 The custom domain build from the SDF definition of heart geometry is available at [heart_example.py](examples/heart_example.py).
@@ -234,8 +251,8 @@ See [Examples.py](examples/Examples.py) and [Example Notebook](examples/Examples
 
 ### Section 2 - Upcoming Priorities
 1. Enhance the **README** with more detailed information.
-2. Publish the package on *PYPI* and *Zenodo* for wider distribution.
-3. Add some tests.
+2. ~~Publish the package on *PYPI* and *Zenodo* for wider distribution.~~
+3. ~~Add some tests.~~
 
 ### Section 3 - Vision and Future Prospects
 
@@ -254,6 +271,22 @@ Contributions are what make the open source community such an amazing place to l
 
 If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement".
 We appreciate your interest in pyPolyMesher!. Don't forget to give the project a star! Thanks again!
+
+## v1.3 Release Notes
+
+This release makes meshing of sharp / non-convex domains robust and the meshed
+geometry faithful to the original shape:
+
+- Fixed a centroid/seed misalignment that could make Lloyd's iteration diverge and
+  fling nodes far outside the domain (especially with fixed points); added a
+  stability guard that keeps seed centroids inside the domain.
+- Added `reentrant_corner_seeds` to capture non-convex corners (Talischi et al. 2012).
+- Added `assess_nodes_outside_domain` to detect/quantify nodes outside the domain.
+- Added `project_nodes_to_domain` and `PolyMesher(..., snap_boundary=True)` to snap
+  boundary nodes onto the exact boundary, removing overshoots and reflection-gap
+  notches (near-zero area error).
+- Removed redundant collinear boundary nodes introduced by snapping.
+- Expanded the test suite (102 tests) including geometric mesh-quality assertions.
 
 ## v1.2 Release Notes
 

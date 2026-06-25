@@ -47,7 +47,15 @@ def dxf_polygon(file_path):
                 continue
             current_data.setdefault(code, []).append(value)
             continue
-        if value in {"SECTION", "ENDSEC", "EOF", "TABLE", "ENDTAB", "BLOCK", "ENDBLK"}:
+        # Group code 0 signals entity start; skip all structural markers.
+        if value in {
+            "SECTION", "ENDSEC", "EOF", "TABLE", "ENDTAB", "BLOCK", "ENDBLK",
+            "HEADER", "CLASSES", "OBJECTS", "FOODS", "THUMBNAILIMAGE", "ACDSDATA",
+        }:
+            flush_current()
+            continue
+        # Skip non-geometry entities that appear in TABLES section.
+        if value in {"APPID", "BLOCK_RECORD", "DICTIONARY", "DIMSTYLE", "LAYER", "LTYPE", "STYLE", "VPORT"}:
             flush_current()
             continue
         flush_current()
