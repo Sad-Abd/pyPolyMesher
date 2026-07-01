@@ -172,3 +172,4 @@ cython_debug/
 /polygonal_mesh.msh
 /SMO_12_PolyMesher.pdf
 /MATLAB PolyMesher/
+.mesh_preview/
