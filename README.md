@@ -115,7 +115,7 @@ Please note that `pyPolyMesher` is published as `PolyMesher` on PYPI.
 
 ### Basic Usage:
 
-`pyPolyMesher.PolyMesherPolyMesher(Domain, NElem, MaxIter, P=None, anim=False)`: Generate polygon mesh on `Domain` with `NElem` number of elements. Improve mesh for `MaxIter` iterations. Can be given an initial point set `P`. 
+`pyPolyMesher.PolyMesher(Domain, NElem, MaxIter, P=None, anim=False)`: Generate polygon mesh on `Domain` with `NElem` number of elements. Improve mesh for `MaxIter` iterations. Can be given an initial point set `P`. 
 
 ```python
 import pyPolyMesher
