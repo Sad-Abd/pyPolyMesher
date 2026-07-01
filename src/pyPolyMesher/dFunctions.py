@@ -132,6 +132,56 @@ def dCircle(P, xc, yc, r):
     return d
 
 
+def dArc(P, xc, yc, r, start_angle, end_angle, ccw=True):
+    """
+    Calculate the signed distance from points P to a circular arc.
+
+    The magnitude is the distance to the arc curve: when a point's polar
+    angle (about the arc center) lies within the arc's angular span, the
+    distance is the radial distance to the circle; otherwise it is the
+    distance to the nearest arc endpoint. The sign is negative inside the
+    parent circle and positive outside (so a full arc reduces to ``dCircle``).
+
+    Parameters:
+        P (numpy.ndarray): Array of 2D points, shape (N, 2).
+        xc, yc (float): Center of the parent circle.
+        r (float): Radius.
+        start_angle, end_angle (float): Arc endpoints in radians.
+        ccw (bool): If True the arc runs counter-clockwise from start to end.
+
+    Returns:
+        numpy.ndarray: (N, 2) array of signed distances (both columns equal).
+    """
+    dx = P[:, 0] - xc
+    dy = P[:, 1] - yc
+    radial = np.sqrt(dx ** 2 + dy ** 2)
+    theta = np.mod(np.arctan2(dy, dx), 2 * np.pi)
+
+    ext = abs(end_angle - start_angle)
+    full = ext >= 2 * np.pi - 1e-9
+    if full:
+        within = np.ones(P.shape[0], dtype=bool)
+    else:
+        s = np.mod(start_angle, 2 * np.pi)
+        if ccw:
+            span = np.mod(end_angle - start_angle, 2 * np.pi)
+            rel = np.mod(theta - s, 2 * np.pi)
+        else:
+            span = np.mod(start_angle - end_angle, 2 * np.pi)
+            rel = np.mod(s - theta, 2 * np.pi)
+        within = rel <= span
+
+    circ_dist = radial - r
+    p_start = np.array([xc + r * np.cos(start_angle), yc + r * np.sin(start_angle)])
+    p_end = np.array([xc + r * np.cos(end_angle), yc + r * np.sin(end_angle)])
+    d_start = np.sqrt((P[:, 0] - p_start[0]) ** 2 + (P[:, 1] - p_start[1]) ** 2)
+    d_end = np.sqrt((P[:, 0] - p_end[0]) ** 2 + (P[:, 1] - p_end[1]) ** 2)
+
+    arc_dist = np.where(within, np.abs(circ_dist), np.minimum(d_start, d_end))
+    signed = np.where(radial < r, -arc_dist, arc_dist)
+    return np.column_stack((signed, signed))
+
+
 def dEllipse(P, xc, yc, a, b, theta=0.0):
     """
     Compute the signed distance from points P to an ellipse centered at (xc, yc),

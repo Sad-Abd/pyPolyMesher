@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 
 from pyPolyMesher.dFunctions import (
+    dArc,
     dCircle,
     dDiff,
     dEllipse,
@@ -46,6 +47,30 @@ class TestSignedDistanceFields:
             [[-1, -1], [0, 0], [np.sqrt(2) - 1, np.sqrt(2) - 1], [np.sqrt(8) - 1, np.sqrt(8) - 1]]
         )
         np.testing.assert_array_almost_equal(result, expected)
+
+    def test_dArc_full_circle_matches_dCircle(self):
+        P = np.array([[0, 0], [0, 1], [1, 1], [2, 2]])
+        arc = dArc(P, 0, 0, 1, 0.0, 2 * np.pi, ccw=True)
+        circ = dCircle(P, 0, 0, 1)
+        np.testing.assert_array_almost_equal(arc, circ)
+
+    def test_dArc_quarter_on_arc_and_endpoints(self):
+        # quarter circle from angle 0 to pi/2, center origin, r=2
+        P = np.array([[2, 0], [0, 2], [2, 2], [1, 1], [3, 0]])
+        result = dArc(P, 0, 0, 2, 0.0, np.pi / 2, ccw=True)
+        assert result.shape == (5, 2)
+        np.testing.assert_array_almost_equal(result[0, -1], 0.0)      # on arc
+        np.testing.assert_array_almost_equal(result[1, -1], 0.0)      # on arc (endpoint)
+        np.testing.assert_array_almost_equal(result[4, -1], 1.0)      # at start endpoint, r=2 -> dist 1 to (2,0)
+        assert result[3, -1] < 0  # inside the full circle
+        assert result[2, -1] > 0  # outside circle
+
+    def test_dArc_outside_angular_span_uses_endpoints(self):
+        # point at angle ~pi (opposite side) should be distance to nearest endpoint
+        P = np.array([[-2, 0]])
+        result = dArc(P, 0, 0, 2, 0.0, np.pi / 2, ccw=True)
+        # nearest endpoint is (2,0) or (0,2); distance = sqrt(8)
+        np.testing.assert_array_almost_equal(result[0, -1], np.sqrt(8))
 
     def test_dRectangle(self):
         P = np.array([[0, 0], [1, 1], [2, 2], [3, 3]])
