@@ -72,6 +72,25 @@ class TestSignedDistanceFields:
         # nearest endpoint is (2,0) or (0,2); distance = sqrt(8)
         np.testing.assert_array_almost_equal(result[0, -1], np.sqrt(8))
 
+    def test_dArc_clockwise_matches_counter_clockwise_magnitude(self):
+        # cw arc from pi/2 to 0 traces the same quarter as ccw 0 to pi/2
+        P = np.array([[2, 0], [0, 2], [2, 2], [1, 1], [3, 0], [-2, 0]])
+        ccw = dArc(P, 0, 0, 2, 0.0, np.pi / 2, ccw=True)
+        cw = dArc(P, 0, 0, 2, np.pi / 2, 0.0, ccw=False)
+        np.testing.assert_array_almost_equal(np.abs(cw[:, -1]), np.abs(ccw[:, -1]))
+        # signs must also match (same parent circle)
+        np.testing.assert_array_almost_equal(cw, ccw)
+
+    def test_dArc_center_point_and_offset_origin(self):
+        # point at the arc center -> distance -r (inside parent circle)
+        P = np.array([[5, 5]])
+        result = dArc(P, 5, 5, 3, 0.0, np.pi / 2, ccw=True)
+        np.testing.assert_array_almost_equal(result, np.array([[-3.0, -3.0]]))
+        # offset start_angle and non-origin center: a point on the arc at angle pi/4
+        P2 = np.array([[5 + 2 * np.cos(np.pi / 4), 5 + 2 * np.sin(np.pi / 4)]])
+        r2 = dArc(P2, 5, 5, 2, np.pi / 4, np.pi, ccw=True)
+        np.testing.assert_array_almost_equal(r2[:, -1], 0.0)
+
     def test_dRectangle(self):
         P = np.array([[0, 0], [1, 1], [2, 2], [3, 3]])
         result = dRectangle(P, 0, 2, 0, 2)
