@@ -267,7 +267,11 @@ def _loop_polygon_dxf(loop):
     return _loop_polygon(loop)
 
 
-def _loops_pfix(loops, bbox, angle_tol=5.0):
+def _loops_pfix(loops, bbox, angle_tol=15.0):
+    # angle_tol must exceed the per-vertex turn of tessellated smooth curves
+    # (a 64-sample circle/gon has turns ~360/63 ~ 5.7deg) so that smooth-curve
+    # tessellation vertices are NOT mistaken for sharp corners. 15deg safely
+    # filters those while still catching genuine sharp corners (>=15deg).
     """
     Fixed-point seeds at sharp loop corners. Convex sharp corners contribute the
     corner point itself; re-entrant (concave) corners contribute the three

@@ -353,3 +353,48 @@ def test_dxf_to_domain_meshes_without_nodes_outside(tmp_path):
     Node, Element, Supp, Load, P = PolyMesher(dom, 30, 20, anim=False)
     report = assess_nodes_outside_domain(Node, dom.SDF, verbose=False)
     assert report["num_outside"] <= 1
+
+
+def test_dxf_to_domain_circle_has_few_fixed_points(tmp_path):
+    # a smooth circle has NO sharp corners -> very few fixed points (not ~63)
+    path = tmp_path / "c.dxf"
+    path.write_text("\n".join([
+        "0", "SECTION", "2", "ENTITIES",
+        "0", "CIRCLE", "10", "5", "20", "5", "40", "2",
+        "0", "ENDSEC", "0", "EOF",
+    ]))
+    dom = dxf_to_domain(str(path), detect_fixed_points=True)
+    assert len(dom.PFix) <= 2  # was ~63 before the angle_tol fix
+
+
+def test_dxf_to_domain_circle_meshes_cleanly_with_pfix(tmp_path):
+    from pyPolyMesher import PolyMesher, assess_nodes_outside_domain
+    path = tmp_path / "c.dxf"
+    path.write_text("\n".join([
+        "0", "SECTION", "2", "ENTITIES",
+        "0", "CIRCLE", "10", "5", "20", "5", "40", "2",
+        "0", "ENDSEC", "0", "EOF",
+    ]))
+    dom = dxf_to_domain(str(path), detect_fixed_points=True)
+    Node, Element, Supp, Load, P = PolyMesher(dom, 30, 20, anim=False)
+    report = assess_nodes_outside_domain(Node, dom.SDF, verbose=False)
+    assert report["num_outside"] <= 1
+
+
+def test_dxf_to_domain_arc_fillet_meshes_cleanly(tmp_path):
+    from pyPolyMesher import PolyMesher, assess_nodes_outside_domain
+    # square with a 90deg fillet (arc via bulge) meshed through PolyMesher
+    path = tmp_path / "f.dxf"
+    path.write_text("\n".join([
+        "0", "SECTION", "2", "ENTITIES",
+        "0", "LWPOLYLINE",
+        "10", "0", "20", "0", "42", "0",
+        "10", "2", "20", "0", "42", "0.4142135623730951",
+        "10", "2", "20", "2", "42", "0",
+        "10", "0", "20", "2", "42", "0",
+        "0", "ENDSEC", "0", "EOF",
+    ]))
+    dom = dxf_to_domain(str(path), detect_fixed_points=True)
+    Node, Element, Supp, Load, P = PolyMesher(dom, 30, 20, anim=False)
+    report = assess_nodes_outside_domain(Node, dom.SDF, verbose=False)
+    assert report["num_outside"] <= 1
