@@ -325,3 +325,12 @@ def test_dxf_to_domain_tessellate_matches_exact_within_tol(tmp_path):
     t = dom_tess.SDF(P)[:, -1]
     assert np.all(np.sign(e) == np.sign(t))
     np.testing.assert_allclose(np.abs(t), np.abs(e), atol=0.2)
+
+
+def test_public_exports_available():
+    import pyPolyMesher as ppm
+    from pyPolyMesher import dxf_to_domain, dArc, dSpline, dLoop
+    assert callable(ppm.dxf_to_domain)
+    assert callable(ppm.dArc)
+    assert callable(ppm.dSpline)
+    assert callable(ppm.dLoop)
