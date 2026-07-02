@@ -289,25 +289,147 @@ def dSpline(P, control_points, degree=3, knots=None, weights=None, n_samples=Non
         verts = [tuple(p) for p in pts]
         signed = dPolygon(P, list(verts))[:, -1]
         return np.column_stack((signed, signed))
-    # True unsigned point-to-segment distance over the tessellation polyline.
-    # NOTE: dLineExact's signed output is zeroed for points collinear with a
-    # segment line but outside the segment extent (sign == sign(0) == 0), so we
-    # compute the unsigned polyline distance directly to stay honest.
+    # True unsigned point-to-polyline distance over the tessellation. dLineExact
+    # is unreliable for points collinear with a segment line but outside the
+    # segment extent (its perpendicular sign is 0 there, zeroing the endpoint
+    # distance), so we share the projection+clamp helper _polyline_distance with
+    # the segment helpers below.
+    dist = _polyline_distance(P, pts, closed=False)
+    return np.column_stack((dist, dist))
+
+
+def _polyline_distance(P, points, closed=False):
+    """True unsigned distance from points P to a polyline (sequence of (x,y))."""
+    P = np.asarray(P, dtype=float)
+    pts = np.asarray(points, dtype=float)
+    n = len(pts)
+    if n < 2:
+        return np.full(P.shape[0], np.inf)
+    edges = [(pts[k], pts[k + 1]) for k in range(n - 1)]
+    if closed and n > 2 and np.linalg.norm(pts[-1] - pts[0]) > 1e-9:
+        edges.append((pts[-1], pts[0]))
     dist = np.full(P.shape[0], np.inf)
-    for k in range(len(pts) - 1):
-        a = pts[k]
-        b = pts[k + 1]
+    for a, b in edges:
         ab = b - a
         ab_len2 = float(ab[0] ** 2 + ab[1] ** 2)
         ap = P - a
         if ab_len2 == 0.0:
             seg_d = np.sqrt(ap[:, 0] ** 2 + ap[:, 1] ** 2)
         else:
-            t = (ap[:, 0] * ab[0] + ap[:, 1] * ab[1]) / ab_len2
-            t = np.clip(t, 0.0, 1.0)
-            seg_d = np.sqrt((P[:, 0] - (a[0] + t * ab[0])) ** 2 + (P[:, 1] - (a[1] + t * ab[1])) ** 2)
+            t = np.clip((ap[:, 0] * ab[0] + ap[:, 1] * ab[1]) / ab_len2, 0.0, 1.0)
+            proj = a + t[:, None] * ab
+            seg_d = np.sqrt((P[:, 0] - proj[:, 0]) ** 2 + (P[:, 1] - proj[:, 1]) ** 2)
         dist = np.minimum(dist, seg_d)
-    return np.column_stack((dist, dist))
+    return dist
+
+
+def _segment_distance(P, seg):
+    """Signed distance (N,) to a single segment dict (sign per primitive's convention)."""
+    t = seg["type"]
+    if t == "line":
+        return dLineExact(P, seg["p1"][0], seg["p1"][1], seg["p2"][0], seg["p2"][1])[:, -1]
+    if t == "arc":
+        return dArc(P, seg["xc"], seg["yc"], seg["r"], seg["start_angle"], seg["end_angle"], seg.get("ccw", True))[:, -1]
+    if t == "circle":
+        return dCircle(P, seg["xc"], seg["yc"], seg["r"])[:, -1]
+    if t == "ellipse":
+        return dEllipse(P, seg["xc"], seg["yc"], seg["a"], seg["b"], seg.get("theta", 0.0))[:, -1]
+    if t == "ellipse_arc":
+        pts = _segment_points(seg, 64)
+        return _polyline_distance(P, pts, closed=False)
+    if t == "spline":
+        return dSpline(P, seg["ctrl"], seg.get("degree", 3), seg.get("knots"), seg.get("weights"), seg.get("n_samples"), seg.get("closed", False))[:, -1]
+    if t == "polyline":
+        return _polyline_distance(P, seg["points"], seg.get("closed", False))
+    raise ValueError(f"Unknown segment type: {t}")
+
+
+def _segment_points(seg, n=64):
+    """Sample points on a segment (for bbox / polygon / tessellation)."""
+    t = seg["type"]
+    if t == "line":
+        return [np.asarray(seg["p1"], dtype=float), np.asarray(seg["p2"], dtype=float)]
+    if t == "arc":
+        a0, a1 = seg["start_angle"], seg["end_angle"]
+        if not seg.get("ccw", True):
+            a0, a1 = a1, a0
+        ang = np.linspace(a0, a1, n)
+        return np.column_stack((seg["xc"] + seg["r"] * np.cos(ang), seg["yc"] + seg["r"] * np.sin(ang)))
+    if t == "circle":
+        ang = np.linspace(0, 2 * np.pi, n)
+        return np.column_stack((seg["xc"] + seg["r"] * np.cos(ang), seg["yc"] + seg["r"] * np.sin(ang)))
+    if t == "ellipse":
+        ang = np.linspace(0, 2 * np.pi, n)
+        a, b, th = seg["a"], seg["b"], seg.get("theta", 0.0)
+        x = seg["xc"] + a * np.cos(ang) * np.cos(th) - b * np.sin(ang) * np.sin(th)
+        y = seg["yc"] + a * np.cos(ang) * np.sin(th) + b * np.sin(ang) * np.cos(th)
+        return np.column_stack((x, y))
+    if t == "ellipse_arc":
+        ang = np.linspace(seg["start"], seg["end"], n)
+        a, b, th = seg["a"], seg["b"], seg.get("theta", 0.0)
+        x = seg["xc"] + a * np.cos(ang) * np.cos(th) - b * np.sin(ang) * np.sin(th)
+        y = seg["yc"] + a * np.cos(ang) * np.sin(th) + b * np.sin(ang) * np.cos(th)
+        return np.column_stack((x, y))
+    if t == "spline":
+        return _spline_samples(seg["ctrl"], seg.get("degree", 3), seg.get("knots"), seg.get("weights"), seg.get("n_samples", n), seg.get("closed", False))
+    if t == "polyline":
+        return np.asarray(seg["points"], dtype=float)
+    raise ValueError(f"Unknown segment type: {t}")
+
+
+def _loop_polygon(loop):
+    """Tessellated polygon vertices of a closed loop (dedup consecutive duplicates)."""
+    pts = []
+    for seg in loop:
+        sp = np.asarray(_segment_points(seg), dtype=float)
+        if len(pts) == 0:
+            pts.extend([tuple(p) for p in sp])
+        else:
+            if np.linalg.norm(np.asarray(sp[0]) - np.asarray(pts[-1])) < 1e-9:
+                pts.extend([tuple(p) for p in sp[1:]])
+            else:
+                pts.extend([tuple(p) for p in sp])
+    if len(pts) > 1 and np.linalg.norm(np.asarray(pts[0]) - np.asarray(pts[-1])) < 1e-9:
+        pts = pts[:-1]
+    return [tuple(p) for p in pts]
+
+
+def dLoop(P, loops):
+    """
+    Signed distance from points P to one or more closed loops of mixed segments.
+
+    ``loops`` is a list of loops; each loop is a list of segment dicts. For
+    convenience, a single loop (a list of segment dicts) may be passed directly.
+    The magnitude is the minimum distance to any segment of any loop. The sign is
+    determined by containment parity: a point is inside the domain if it lies
+    inside an odd number of loops (so nested loops form holes, islands, etc.).
+
+    Returns:
+        numpy.ndarray: (N, S+1) where S is the total number of segments; the
+        first S columns are absolute per-segment distances and the last column is
+        the parity-signed combined distance.
+    """
+    P = np.asarray(P, dtype=float)
+    if loops and isinstance(loops[0], dict):
+        loops = [loops]
+    seg_cols = []
+    loop_polys = []
+    for loop in loops:
+        for seg in loop:
+            seg_cols.append(np.abs(_segment_distance(P, seg)))
+        loop_polys.append(_loop_polygon(loop))
+    if seg_cols:
+        seg_array = np.column_stack(seg_cols)
+        magnitude = seg_array.min(axis=1)
+    else:
+        seg_array = np.empty((P.shape[0], 0))
+        magnitude = np.full(P.shape[0], np.inf)
+    inside_count = np.zeros(P.shape[0], dtype=int)
+    for poly in loop_polys:
+        inside_count += _is_point_in_polygon(P, poly).astype(int)
+    inside = (inside_count % 2 == 1)
+    signed = magnitude * np.where(inside, -1.0, 1.0)
+    return np.column_stack([seg_array, signed])
 
 
 def dEllipse(P, xc, yc, a, b, theta=0.0):

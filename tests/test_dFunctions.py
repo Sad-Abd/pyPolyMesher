@@ -9,6 +9,7 @@ from pyPolyMesher.dFunctions import (
     dIntersect,
     dLine,
     dLineExact,
+    dLoop,
     dPolygon,
     dRectangle,
     dRegularPolygon,
@@ -116,6 +117,58 @@ class TestSignedDistanceFields:
         result = dSpline(P, ctrl, degree=2, closed=True)
         assert result[0, -1] < 0  # origin inside
         assert result[1, -1] > 0  # far outside
+
+    def test_dLoop_four_lines_equals_dRectangle(self):
+        segs = [
+            {"type": "line", "p1": (0, 0), "p2": (2, 0)},
+            {"type": "line", "p1": (2, 0), "p2": (2, 2)},
+            {"type": "line", "p1": (2, 2), "p2": (0, 2)},
+            {"type": "line", "p1": (0, 2), "p2": (0, 0)},
+        ]
+        # Exterior point is taken opposite an edge interior ([1,3], above the
+        # top edge) rather than past a corner: dRectangle's max(x1-x, x-x2,
+        # y1-y, y-y2) formula is exact for interior points and exterior points
+        # that project onto an edge, but underestimates at exterior corners
+        # (e.g. [3,3] -> 1 instead of the true sqrt(2)). dLoop computes the true
+        # Euclidean per-segment distance, so the two agree only where dRectangle
+        # is exact.
+        P = np.array([[0, 0], [1, 1], [2, 2], [1, 3]])
+        result = dLoop(P, segs)
+        rect = dRectangle(P, 0, 2, 0, 2)
+        assert result.shape == (4, 5)  # 4 segments + 1 signed
+        np.testing.assert_array_almost_equal(result[:, -1], rect[:, -1])
+
+    def test_dLoop_square_sign_inside_outside(self):
+        segs = [
+            {"type": "line", "p1": (1, 0), "p2": (1, 1)},
+            {"type": "line", "p1": (1, 1), "p2": (0, 1)},
+            {"type": "line", "p1": (0, 1), "p2": (0, 0)},
+            {"type": "line", "p1": (0, 0), "p2": (1, 0)},
+        ]
+        P = np.array([[0.5, 0.5], [2, 2]])
+        result = dLoop(P, segs)
+        assert result[0, -1] < 0  # inside
+        assert result[1, -1] > 0  # outside
+
+    def test_dLoop_multi_loop_parity_hole(self):
+        outer = [
+            {"type": "line", "p1": (0, 0), "p2": (4, 0)},
+            {"type": "line", "p1": (4, 0), "p2": (4, 4)},
+            {"type": "line", "p1": (4, 4), "p2": (0, 4)},
+            {"type": "line", "p1": (0, 4), "p2": (0, 0)},
+        ]
+        hole = [
+            {"type": "line", "p1": (1, 1), "p2": (3, 1)},
+            {"type": "line", "p1": (3, 1), "p2": (3, 3)},
+            {"type": "line", "p1": (3, 3), "p2": (1, 3)},
+            {"type": "line", "p1": (1, 3), "p2": (1, 1)},
+        ]
+        P = np.array([[2, 2], [0.5, 0.5], [5, 5]])
+        result = dLoop(P, [outer, hole])
+        assert result[0, -1] > 0   # in the hole -> outside domain (even parity)
+        assert result[1, -1] < 0   # in the solid ring
+        assert result[2, -1] > 0   # outside everything
+        assert result.shape == (3, 9)  # 8 segments + 1 signed
 
     def test_dRectangle(self):
         P = np.array([[0, 0], [1, 1], [2, 2], [3, 3]])
