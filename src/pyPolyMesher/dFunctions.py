@@ -182,6 +182,134 @@ def dArc(P, xc, yc, r, start_angle, end_angle, ccw=True):
     return np.column_stack((signed, signed))
 
 
+def _build_clamped_knots(n_ctrl, degree):
+    """Clamped uniform open knot vector for n_ctrl control points."""
+    if n_ctrl <= degree:
+        return np.array([0.0] * (degree + 1) + [1.0] * (degree + 1))
+    internal = n_ctrl - degree - 1
+    if internal <= 0:
+        knots = [0.0] * (degree + 1) + [1.0] * (degree + 1)
+    else:
+        knots = [0.0] * (degree + 1) + list(np.linspace(0, 1, internal + 2)[1:-1]) + [1.0] * (degree + 1)
+    return np.array(knots)
+
+
+def _bspline_basis_span(knots, degree, u):
+    """Index i of the knot span [u_i, u_{i+1}) containing u (clamped)."""
+    n = len(knots) - degree - 1
+    if u >= knots[n]:
+        return n - 1
+    if u <= knots[degree]:
+        return degree
+    low, high = degree, n
+    while high - low > 1:
+        mid = (low + high) // 2
+        if knots[mid] <= u:
+            low = mid
+        else:
+            high = mid
+    return low
+
+
+def _bspline_point_clamped(u, knots, ctrl, degree, weights):
+    """Evaluate a (rational) B-spline point at u via de Boor in homogeneous coords."""
+    i = _bspline_basis_span(knots, degree, u)
+    p = degree
+    if weights is not None:
+        d = np.array([[ctrl[i - p + j][0] * weights[i - p + j],
+                       ctrl[i - p + j][1] * weights[i - p + j],
+                       weights[i - p + j]] for j in range(p + 1)], dtype=float)
+    else:
+        d = np.array([[ctrl[i - p + j][0], ctrl[i - p + j][1], 1.0] for j in range(p + 1)], dtype=float)
+    for r in range(1, p + 1):
+        for j in range(p, r - 1, -1):
+            den = knots[i + 1 + j - r] - knots[i - p + j]
+            alpha = 0.0 if den == 0 else (u - knots[i - p + j]) / den
+            d[j] = (1 - alpha) * d[j - 1] + alpha * d[j]
+    return np.array([d[p][0] / d[p][2], d[p][1] / d[p][2]])
+
+
+def _bspline_point_periodic(u, ctrl, degree):
+    """Evaluate a uniform periodic (closed) B-spline at parameter u."""
+    n = len(ctrl)
+    p = degree
+    i = int(np.floor(u))
+    if i >= n:
+        i = n - 1
+    d = [np.asarray(ctrl[(i - p + j) % n], dtype=float) for j in range(p + 1)]
+    for r in range(1, p + 1):
+        for j in range(p, r - 1, -1):
+            den = p + 1 - r  # uniform unit-spaced knots
+            a = (u - (i - p + j)) / den
+            d[j] = (1 - a) * d[j - 1] + a * d[j]
+    return d[p]
+
+
+def _spline_samples(ctrl, degree, knots, weights, n_samples, closed):
+    """Tessellate a B-spline into n_samples points."""
+    ctrl = [np.asarray(c, dtype=float) for c in ctrl]
+    if n_samples is None:
+        n_samples = max(50, 10 * len(ctrl))
+    if closed:
+        u_lo, u_hi = degree - 1, len(ctrl)
+        us = np.linspace(u_lo, u_hi, n_samples, endpoint=False)
+        return np.array([_bspline_point_periodic(u, ctrl, degree) for u in us])
+    if knots is None:
+        knots = _build_clamped_knots(len(ctrl), degree)
+    u_lo, u_hi = knots[degree], knots[len(knots) - degree - 1]
+    us = np.linspace(u_lo, u_hi, n_samples)
+    return np.array([_bspline_point_clamped(u, knots, ctrl, degree, weights) for u in us])
+
+
+def dSpline(P, control_points, degree=3, knots=None, weights=None, n_samples=None, closed=False):
+    """
+    Signed distance from points P to a (rational) B-spline curve.
+
+    The curve is adaptively tessellated into a polyline; the distance is the
+    polyline distance (an honest approximation; ``n_samples`` may be increased
+    for accuracy). For a closed spline the sign is computed via point-in-polygon
+    over the tessellation (negative inside). For an open spline both columns hold
+    the unsigned distance (the enclosing loop supplies the sign).
+
+    Parameters:
+        P (numpy.ndarray): Array of 2D points, shape (N, 2).
+        control_points (sequence): Control points (x, y).
+        degree (int): Spline degree (default 3).
+        knots (array-like, optional): Knot vector (open splines). Auto-built if None.
+        weights (array-like, optional): Rational weights. Ignored for closed splines.
+        n_samples (int, optional): Tessellation resolution. Auto-chosen if None.
+        closed (bool): Whether the spline is a closed loop.
+
+    Returns:
+        numpy.ndarray: (N, 2) array of signed distances (both columns equal).
+    """
+    P = np.asarray(P, dtype=float)
+    pts = _spline_samples(control_points, degree, knots, weights, n_samples, closed)
+    if closed:
+        verts = [tuple(p) for p in pts]
+        signed = dPolygon(P, list(verts))[:, -1]
+        return np.column_stack((signed, signed))
+    # True unsigned point-to-segment distance over the tessellation polyline.
+    # NOTE: dLineExact's signed output is zeroed for points collinear with a
+    # segment line but outside the segment extent (sign == sign(0) == 0), so we
+    # compute the unsigned polyline distance directly to stay honest.
+    dist = np.full(P.shape[0], np.inf)
+    for k in range(len(pts) - 1):
+        a = pts[k]
+        b = pts[k + 1]
+        ab = b - a
+        ab_len2 = float(ab[0] ** 2 + ab[1] ** 2)
+        ap = P - a
+        if ab_len2 == 0.0:
+            seg_d = np.sqrt(ap[:, 0] ** 2 + ap[:, 1] ** 2)
+        else:
+            t = (ap[:, 0] * ab[0] + ap[:, 1] * ab[1]) / ab_len2
+            t = np.clip(t, 0.0, 1.0)
+            seg_d = np.sqrt((P[:, 0] - (a[0] + t * ab[0])) ** 2 + (P[:, 1] - (a[1] + t * ab[1])) ** 2)
+        dist = np.minimum(dist, seg_d)
+    return np.column_stack((dist, dist))
+
+
 def dEllipse(P, xc, yc, a, b, theta=0.0):
     """
     Compute the signed distance from points P to an ellipse centered at (xc, yc),

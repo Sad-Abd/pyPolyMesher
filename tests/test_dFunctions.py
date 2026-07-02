@@ -12,6 +12,7 @@ from pyPolyMesher.dFunctions import (
     dPolygon,
     dRectangle,
     dRegularPolygon,
+    dSpline,
     dStar,
     dUnion,
 )
@@ -90,6 +91,31 @@ class TestSignedDistanceFields:
         P2 = np.array([[5 + 2 * np.cos(np.pi / 4), 5 + 2 * np.sin(np.pi / 4)]])
         r2 = dArc(P2, 5, 5, 2, np.pi / 4, np.pi, ccw=True)
         np.testing.assert_array_almost_equal(r2[:, -1], 0.0)
+
+    def test_dSpline_open_degree1_is_straight_line(self):
+        # degree-1 B-spline with 2 control points is a straight segment (0,0)-(2,0)
+        P = np.array([[1, 0], [1, 1], [3, 0], [-1, 0]])
+        result = dSpline(P, [(0, 0), (2, 0)], degree=1)
+        assert result.shape == (4, 2)
+        np.testing.assert_array_almost_equal(result[0, -1], 0.0)   # on the line
+        np.testing.assert_array_almost_equal(result[1, -1], 1.0)   # 1 above
+        np.testing.assert_array_almost_equal(result[2, -1], 1.0)   # 1 past end -> endpoint dist
+        np.testing.assert_array_almost_equal(result[3, -1], 1.0)   # 1 before start
+
+    def test_dSpline_open_clamped_passes_through_endpoints(self):
+        # clamped cubic passes through first and last control point
+        ctrl = [(0, 0), (1, 2), (2, 2), (3, 0)]
+        P = np.array([[0, 0], [3, 0]])
+        result = dSpline(P, ctrl, degree=3)
+        np.testing.assert_array_almost_equal(result[:, -1], 0.0)
+
+    def test_dSpline_closed_has_pip_sign(self):
+        # closed quadratic spline approximating a loop around the origin
+        ctrl = [(2, 0), (0, 2), (-2, 0), (0, -2)]
+        P = np.array([[0, 0], [5, 5]])
+        result = dSpline(P, ctrl, degree=2, closed=True)
+        assert result[0, -1] < 0  # origin inside
+        assert result[1, -1] > 0  # far outside
 
     def test_dRectangle(self):
         P = np.array([[0, 0], [1, 1], [2, 2], [3, 3]])
