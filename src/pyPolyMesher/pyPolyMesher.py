@@ -373,33 +373,30 @@ class Domain:
 
         plt.show()
 
-    def CalculateArea(self, n=1_000_000):
+    def CalculateArea(self, n=1_000_000, chunk=100_000):
         """
-        Calculates the approximate area of the domain using the Monte Carlo method.
+        Calculates the approximate area of the domain using the Monte Carlo method,
+        evaluating the SDF in chunks so that only the signed column is retained.
+        This keeps memory bounded for domains with many boundary segments.
 
         Args:
-            n (int, optional): The number of random points to use. Default is 1,000,000.
+            n (int, optional): Total random samples. Default 1,000,000.
+            chunk (int, optional): Samples per SDF evaluation. Default 100,000.
 
         Returns:
-            float: The calculated approximate area of the domain.
+            float: The approximate area of the domain.
         """
         xmin, xmax, ymin, ymax = self.BdBox
         total_area = (xmax - xmin) * (ymax - ymin)
-
-        # Generate random points within the bounding box
-        points = np.random.uniform(low=[xmin, ymin], high=[xmax, ymax], size=(n, 2))
-
-        # Evaluate SDF for all points at once
-        sdf_values = self.SDF(points)[:, -1]
-
-        # Count points inside the domain
-        points_inside = np.sum(sdf_values <= 0)
-
-        # Calculate the ratio and multiply by total area
-        area_ratio = points_inside / n
-        approximate_area = area_ratio * total_area
-
-        return approximate_area
+        points_inside = 0
+        remaining = n
+        while remaining > 0:
+            k = min(chunk, remaining)
+            pts = np.random.uniform(low=[xmin, ymin], high=[xmax, ymax], size=(k, 2))
+            sdf_values = self.SDF(pts)
+            points_inside += int(np.sum(sdf_values[:, -1] <= 0))
+            remaining -= k
+        return (points_inside / n) * total_area
 
 
 def PolyMesher(Domain, NElem, MaxIter, P=None, anim=False, snap_boundary=True):

@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from pyPolyMesher import Domain
 from pyPolyMesher.dFunctions import dCircle, dRectangle
@@ -58,3 +59,10 @@ def test_domain_calculatearea_returns_plausible_circle_area_under_fixed_seed():
 
     assert 2.9 < area < 3.35
     assert abs(area - np.pi) < 0.2
+
+
+def test_calculate_area_chunked_for_multi_segment_domain():
+    from pyPolyMesher.exampleDomains import MbbDomain
+    # Mbb is a 3x1 rectangle; chunked path must still give ~3.0
+    area = MbbDomain.CalculateArea(n=20000)
+    assert area == pytest.approx(3.0, rel=0.05)
