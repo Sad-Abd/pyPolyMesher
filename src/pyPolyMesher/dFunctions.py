@@ -327,7 +327,7 @@ def _segment_distance(P, seg):
     """Signed distance (N,) to a single segment dict (sign per primitive's convention)."""
     t = seg["type"]
     if t == "line":
-        return dLineExact(P, seg["p1"][0], seg["p1"][1], seg["p2"][0], seg["p2"][1])[:, -1]
+        return _polyline_distance(P, [seg["p1"], seg["p2"]], closed=False)
     if t == "arc":
         return dArc(P, seg["xc"], seg["yc"], seg["r"], seg["start_angle"], seg["end_angle"], seg.get("ccw", True))[:, -1]
     if t == "circle":

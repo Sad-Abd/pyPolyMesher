@@ -170,6 +170,19 @@ class TestSignedDistanceFields:
         assert result[2, -1] > 0   # outside everything
         assert result.shape == (3, 9)  # 8 segments + 1 signed
 
+    def test_dLoop_line_collinear_outside_uses_endpoint_distance(self):
+        # point (3,0) is collinear with the bottom edge (0,0)-(2,0) but past its
+        # endpoint; true distance is 1 (to corner (2,0)), NOT 0.
+        segs = [
+            {"type": "line", "p1": (0, 0), "p2": (2, 0)},
+            {"type": "line", "p1": (2, 0), "p2": (2, 2)},
+            {"type": "line", "p1": (2, 2), "p2": (0, 2)},
+            {"type": "line", "p1": (0, 2), "p2": (0, 0)},
+        ]
+        P = np.array([[3, 0]])
+        result = dLoop(P, segs)
+        np.testing.assert_array_almost_equal(result[0, -1], 1.0)
+
     def test_dRectangle(self):
         P = np.array([[0, 0], [1, 1], [2, 2], [3, 3]])
         result = dRectangle(P, 0, 2, 0, 2)
