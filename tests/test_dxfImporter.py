@@ -334,3 +334,22 @@ def test_public_exports_available():
     assert callable(ppm.dArc)
     assert callable(ppm.dSpline)
     assert callable(ppm.dLoop)
+
+
+def test_dxf_to_domain_meshes_without_nodes_outside(tmp_path):
+    from pyPolyMesher import PolyMesher, assess_nodes_outside_domain
+
+    path = tmp_path / "rh.dxf"
+    path.write_text("\n".join([
+        "0", "SECTION", "2", "ENTITIES",
+        "0", "LINE", "10", "0", "20", "0", "11", "6", "21", "0",
+        "0", "LINE", "10", "6", "20", "0", "11", "6", "21", "6",
+        "0", "LINE", "10", "6", "20", "6", "11", "0", "21", "6",
+        "0", "LINE", "10", "0", "20", "6", "11", "0", "21", "0",
+        "0", "CIRCLE", "10", "3", "20", "3", "40", "1",
+        "0", "ENDSEC", "0", "EOF",
+    ]))
+    dom = dxf_to_domain(str(path), detect_fixed_points=False)
+    Node, Element, Supp, Load, P = PolyMesher(dom, 30, 20, anim=False)
+    report = assess_nodes_outside_domain(Node, dom.SDF, verbose=False)
+    assert report["num_outside"] <= 1
