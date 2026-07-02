@@ -2,36 +2,35 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import numpy as np
 
-def _pairwise(iterable):
-    it = iter(iterable)
-    return zip(it, it)
+from pyPolyMesher.dFunctions import dLoop
+
+_STRUCTURAL = {
+    "SECTION", "ENDSEC", "EOF", "TABLE", "ENDTAB", "BLOCK", "ENDBLK",
+    "HEADER", "CLASSES", "OBJECTS", "FOODS", "THUMBNAILIMAGE", "ACDSDATA",
+    "APPID", "BLOCK_RECORD", "DICTIONARY", "DIMSTYLE", "LAYER", "LTYPE", "STYLE", "VPORT",
+}
 
 
-def dxf_polygon(file_path):
+def _read_tokens(file_path):
+    """Read a DXF file and return its stripped lines."""
+    return [line.strip() for line in Path(file_path).read_text().splitlines()]
+
+
+def _parse_entities(tokens):
     """
-    Extracts vertices from DXF entities of LINE, LWPOLYLINE, or POLYLINE types in the specified DXF file.
+    Parse a DXF token list into (entity_type, {code: [values]}) pairs.
 
-    Parameters:
-        file_path (str): The path to the DXF file.
-
-    Returns:
-        list: A list of tuples representing the extracted vertices.
-
-    Raises:
-        ValueError: If the lines are not connected.
-        ValueError: If there are multiple POLYLINE entities and the function does not support them.
-        ValueError: If the entities in the file are neither all lines nor all polylines.
+    Every group-code-0 entity that is not a structural/table record is returned,
+    including VERTEX/SEQEND records (so POLYLINE grouping can be done by callers).
     """
-    path = Path(file_path)
-    tokens = path.read_text().splitlines()
-
     entities = []
     i = 0
     current = None
     current_data = {}
 
-    def flush_current():
+    def flush():
         nonlocal current, current_data
         if current is not None:
             entities.append((current, current_data))
@@ -47,29 +46,44 @@ def dxf_polygon(file_path):
                 continue
             current_data.setdefault(code, []).append(value)
             continue
-        # Group code 0 signals entity start; skip all structural markers.
-        if value in {
-            "SECTION", "ENDSEC", "EOF", "TABLE", "ENDTAB", "BLOCK", "ENDBLK",
-            "HEADER", "CLASSES", "OBJECTS", "FOODS", "THUMBNAILIMAGE", "ACDSDATA",
-        }:
-            flush_current()
+        if value in _STRUCTURAL:
+            flush()
             continue
-        # Skip non-geometry entities that appear in TABLES section.
-        if value in {"APPID", "BLOCK_RECORD", "DICTIONARY", "DIMSTYLE", "LAYER", "LTYPE", "STYLE", "VPORT"}:
-            flush_current()
-            continue
-        flush_current()
+        flush()
         current = value
 
-    flush_current()
+    flush()
+    return entities
 
-    ents = entities
-    ents_type = [e[0] for e in ents]
 
-    if ents and all(e == "LINE" for e in ents_type):
+def dxf_polygon(file_path):
+    """
+    Extract polygon vertices from LINE, LWPOLYLINE, or POLYLINE DXF entities.
+
+    (Backward-compatible legacy API.) For richer geometry use ``dxf_to_domain``.
+
+    Parameters:
+        file_path (str): Path to the DXF file.
+
+    Returns:
+        list: List of (x, y) vertex tuples.
+
+    Raises:
+        ValueError: If lines are not connected, multiple polylines exist, or
+            entities are not all lines or all polylines.
+    """
+    tokens = _read_tokens(file_path)
+    entities = _parse_entities(tokens)
+    ents_type = [e[0] for e in entities]
+
+    def _pairwise(iterable):
+        it = iter(iterable)
+        return zip(it, it)
+
+    if entities and all(e == "LINE" for e in ents_type):
         vertices = []
         line_vertices = []
-        for _, data in ents:
+        for _, data in entities:
             x1 = float(data.get("10", ["0"])[0])
             y1 = float(data.get("20", ["0"])[0])
             x2 = float(data.get("11", ["0"])[0])
@@ -80,19 +94,19 @@ def dxf_polygon(file_path):
                 vertices.append(p0_end)
             else:
                 raise ValueError("Lines are not connected!")
+        return vertices
 
-    elif ents and all(e == "LWPOLYLINE" for e in ents_type):
-        if len(ents) > 1:
+    if entities and all(e == "LWPOLYLINE" for e in ents_type):
+        if len(entities) > 1:
             raise ValueError("Does not support multiple POLYLINE.")
-        _, data = ents[0]
+        _, data = entities[0]
         xs = data.get("10", [])
         ys = data.get("20", [])
-        vertices = [(float(x), float(y)) for x, y in _pairwise(sum(zip(xs, ys), ()))]
+        return [(float(x), float(y)) for x, y in _pairwise(sum(zip(xs, ys), ()))]
 
-    elif ents and all(e == "POLYLINE" for e in ents_type):
-        if len(ents) > 1:
+    if entities and all(e == "POLYLINE" for e in ents_type):
+        if len(entities) > 1:
             raise ValueError("Does not support multiple POLYLINE.")
-        # Parse VERTEX records following the POLYLINE entity.
         vertices = []
         inside_polyline = False
         current_vertex = None
@@ -112,8 +126,6 @@ def dxf_polygon(file_path):
                 if code == "20" and "10" in current_vertex:
                     vertices.append((float(current_vertex["10"][-1]), float(current_vertex["20"][-1])))
                     current_vertex = None
+        return vertices
 
-    else:
-        raise ValueError("The entities in the file are not all lines or all polylines.")
-
-    return vertices
+    raise ValueError("The entities in the file are not all lines or all polylines.")

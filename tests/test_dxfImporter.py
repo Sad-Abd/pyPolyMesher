@@ -87,3 +87,20 @@ def test_dxf_polygon_raises_for_mixed_entities(tmp_path):
 
     with pytest.raises(ValueError, match="not all lines or all polylines"):
         dxf_polygon(str(path))
+
+
+def test_dxf_polygon_lwpolyline_with_bulge_is_backward_compatible(tmp_path):
+    # dxf_polygon still returns plain vertices (bulge ignored) for an LWPOLYLINE
+    path = tmp_path / "lw.dxf"
+    path.write_text(
+        "\n".join([
+            "0", "LWPOLYLINE",
+            "10", "0", "20", "0", "42", "0.5",
+            "10", "1", "20", "0", "42", "0",
+            "10", "1", "20", "1", "42", "0",
+            "10", "0", "20", "1", "42", "0",
+            "0", "EOF",
+        ])
+    )
+    vertices = dxf_polygon(str(path))
+    assert vertices == [(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)]
