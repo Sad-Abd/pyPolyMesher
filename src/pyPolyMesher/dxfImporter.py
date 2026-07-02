@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from pathlib import Path
+import warnings
 
 import numpy as np
 
-from pyPolyMesher.dFunctions import dLoop
+from pyPolyMesher.dFunctions import dLoop, _segment_points
 
 _STRUCTURAL = {
     "SECTION", "ENDSEC", "EOF", "TABLE", "ENDTAB", "BLOCK", "ENDBLK",
@@ -128,6 +129,161 @@ def _entity_to_segments(etype, data):
         closed = bool(int(float(data.get("73", ["0"])[0])))
         return [{"type": "spline", "ctrl": ctrl, "degree": degree, "knots": knots, "weights": weights, "closed": closed}]
     return []
+
+
+def _segment_endpoints(seg):
+    """Return (start, end) points of an open segment, or None if self-closed."""
+    t = seg["type"]
+    if t == "line":
+        return (np.asarray(seg["p1"], dtype=float), np.asarray(seg["p2"], dtype=float))
+    if t == "arc":
+        s = np.array([seg["xc"] + seg["r"] * np.cos(seg["start_angle"]),
+                      seg["yc"] + seg["r"] * np.sin(seg["start_angle"])])
+        e = np.array([seg["xc"] + seg["r"] * np.cos(seg["end_angle"]),
+                      seg["yc"] + seg["r"] * np.sin(seg["end_angle"])])
+        return (s, e)
+    if t == "ellipse_arc":
+        pts = np.asarray(_segment_points(seg, 2), dtype=float)
+        return (pts[0], pts[-1])
+    if t == "spline":
+        if seg.get("closed"):
+            return None
+        pts = np.asarray(_segment_points(seg, 2), dtype=float)
+        return (pts[0], pts[-1])
+    if t == "polyline":
+        pts = np.asarray(seg["points"], dtype=float)
+        return (pts[0], pts[-1])
+    return None  # circle, full ellipse -> self-closed
+
+
+def _is_self_closed(seg, tol=1e-6):
+    if seg["type"] in {"circle", "ellipse"}:
+        return True
+    if seg.get("closed"):
+        return True
+    ep = _segment_endpoints(seg)
+    if ep is None:
+        return True
+    return bool(np.linalg.norm(ep[0] - ep[1]) < tol)
+
+
+def _flip_segment(seg):
+    """Reverse the direction of an open segment."""
+    t = seg["type"]
+    if t == "line":
+        return {"type": "line", "p1": seg["p2"], "p2": seg["p1"]}
+    if t == "arc":
+        return {**seg, "start_angle": seg["end_angle"], "end_angle": seg["start_angle"], "ccw": not seg.get("ccw", True)}
+    if t == "ellipse_arc":
+        return {**seg, "start": seg["end"], "end": seg["start"]}
+    if t == "polyline":
+        return {**seg, "points": list(reversed(seg["points"]))}
+    if t == "spline":
+        return {**seg, "ctrl": list(reversed(seg["ctrl"]))}
+    return seg
+
+
+def _chain_loops(segments, tol=1e-6):
+    """Group open segments into closed loops; self-closed segments become 1-segment loops."""
+    loops = []
+    open_segs = []
+    for seg in segments:
+        if _is_self_closed(seg, tol):
+            loops.append([seg])
+        else:
+            open_segs.append(seg)
+
+    used = [False] * len(open_segs)
+    for start in range(len(open_segs)):
+        if used[start]:
+            continue
+        used[start] = True
+        loop = [open_segs[start]]
+        _, cur_end = _segment_endpoints(open_segs[start])
+        loop_start = _segment_endpoints(open_segs[start])[0]
+        while True:
+            found = None
+            flip = False
+            for j in range(len(open_segs)):
+                if used[j]:
+                    continue
+                s, e = _segment_endpoints(open_segs[j])
+                if np.linalg.norm(s - cur_end) < tol:
+                    found, flip = j, False
+                    break
+                if np.linalg.norm(e - cur_end) < tol:
+                    found, flip = j, True
+                    break
+            if found is None:
+                raise ValueError(f"Unclosed loop: no segment connects to point {tuple(cur_end)}.")
+            seg = open_segs[found]
+            if flip:
+                seg = _flip_segment(seg)
+            used[found] = True
+            loop.append(seg)
+            _, cur_end = _segment_endpoints(seg)
+            if np.linalg.norm(cur_end - loop_start) < tol:
+                break
+        loops.append(loop)
+    return loops
+
+
+_NON_GEOMETRY = {"HATCH", "TEXT", "MTEXT", "POINT", "DIMENSION", "LEADER", "SOLID",
+                 "3DFACE", "ATTRIB", "ATTDEF", "VERTEX", "SEQEND"}
+
+
+def dxf_extract_geometry(file_path):
+    """
+    Parse a DXF file and return geometry as a list of closed loops of segments.
+
+    Parameters:
+        file_path (str): Path to the DXF file.
+
+    Returns:
+        list: ``[loop, ...]`` where each loop is a list of segment dicts.
+
+    Raises:
+        ValueError: If no supported geometry is found or a loop cannot be closed.
+    Warns:
+        UserWarning: If INSERT (block reference) entities are present (skipped).
+    """
+    tokens = _read_tokens(file_path)
+    entities = _parse_entities(tokens)
+    segments = []
+    i = 0
+    while i < len(entities):
+        etype, data = entities[i]
+        if etype == "INSERT":
+            warnings.warn(
+                "INSERT (block reference) entities are not supported and will be "
+                "skipped. See README roadmap (block expansion is future work).",
+                UserWarning,
+            )
+            i += 1
+            continue
+        if etype in _NON_GEOMETRY:
+            i += 1
+            continue
+        if etype == "POLYLINE":
+            verts = []
+            i += 1
+            while i < len(entities) and entities[i][0] != "SEQEND":
+                if entities[i][0] == "VERTEX":
+                    vd = entities[i][1]
+                    verts.append((_f(vd, "10"), _f(vd, "20"), _f(vd, "42", default="0")))
+                i += 1
+            i += 1  # skip SEQEND
+            if verts:
+                segments.extend(_polyline_vertices_to_segments(verts))
+            continue
+        segs = _entity_to_segments(etype, data)
+        if segs:
+            segments.extend(segs)
+        i += 1
+
+    if not segments:
+        raise ValueError("No supported geometry entities found in DXF file.")
+    return _chain_loops(segments)
 
 
 def dxf_polygon(file_path):

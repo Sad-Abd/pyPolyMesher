@@ -5,6 +5,7 @@ import pytest
 
 from pyPolyMesher.dxfImporter import (
     dxf_polygon,
+    dxf_extract_geometry,
     _entity_to_segments,
     _bulge_to_arc,
     _polyline_vertices_to_segments,
@@ -147,3 +148,63 @@ def test_polyline_vertices_to_segments_with_bulge():
     assert segs[1]["type"] == "arc"
     assert segs[2]["type"] == "line"
     assert segs[3]["type"] == "line"
+
+
+def test_dxf_extract_geometry_circle_is_single_self_closed_loop(tmp_path):
+    path = tmp_path / "c.dxf"
+    path.write_text("\n".join([
+        "0", "SECTION", "2", "ENTITIES",
+        "0", "CIRCLE", "10", "0", "20", "0", "40", "5",
+        "0", "ENDSEC", "0", "EOF",
+    ]))
+    loops = dxf_extract_geometry(str(path))
+    assert len(loops) == 1
+    assert len(loops[0]) == 1
+    assert loops[0][0]["type"] == "circle"
+
+
+def test_dxf_extract_geometry_chains_lines_into_one_loop(tmp_path):
+    path = tmp_path / "sq.dxf"
+    path.write_text("\n".join([
+        "0", "SECTION", "2", "ENTITIES",
+        "0", "LINE", "10", "0", "20", "0", "11", "2", "21", "0",
+        "0", "LINE", "10", "2", "20", "0", "11", "2", "21", "2",
+        "0", "LINE", "10", "2", "20", "2", "11", "0", "21", "2",
+        "0", "LINE", "10", "0", "20", "2", "11", "0", "21", "0",
+        "0", "ENDSEC", "0", "EOF",
+    ]))
+    loops = dxf_extract_geometry(str(path))
+    assert len(loops) == 1
+    assert len(loops[0]) == 4
+
+
+def test_dxf_extract_geometry_insert_warns(tmp_path):
+    path = tmp_path / "ins.dxf"
+    path.write_text("\n".join([
+        "0", "SECTION", "2", "ENTITIES",
+        "0", "INSERT", "2", "MYBLOCK", "10", "1", "20", "1",
+        "0", "CIRCLE", "10", "0", "20", "0", "40", "1",
+        "0", "ENDSEC", "0", "EOF",
+    ]))
+    with pytest.warns(UserWarning, match="INSERT"):
+        loops = dxf_extract_geometry(str(path))
+    assert loops[0][0]["type"] == "circle"
+
+
+def test_dxf_extract_geometry_unclosed_loop_raises(tmp_path):
+    path = tmp_path / "open.dxf"
+    path.write_text("\n".join([
+        "0", "SECTION", "2", "ENTITIES",
+        "0", "LINE", "10", "0", "20", "0", "11", "1", "21", "0",
+        "0", "LINE", "10", "9", "20", "9", "11", "9", "21", "9",
+        "0", "ENDSEC", "0", "EOF",
+    ]))
+    with pytest.raises(ValueError, match="Unclosed loop"):
+        dxf_extract_geometry(str(path))
+
+
+def test_dxf_extract_geometry_no_geometry_raises(tmp_path):
+    path = tmp_path / "empty.dxf"
+    path.write_text("\n".join(["0", "SECTION", "2", "ENTITIES", "0", "ENDSEC", "0", "EOF"]))
+    with pytest.raises(ValueError, match="No supported geometry"):
+        dxf_extract_geometry(str(path))
