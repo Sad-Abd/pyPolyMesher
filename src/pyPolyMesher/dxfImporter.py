@@ -101,6 +101,15 @@ def _entity_to_segments(etype, data):
         x1, y1 = _f(data, "10"), _f(data, "20")
         x2, y2 = _f(data, "11"), _f(data, "21")
         return [{"type": "line", "p1": (x1, y1), "p2": (x2, y2)}]
+    if etype == "LWPOLYLINE":
+        xs = [float(v) for v in data.get("10", [])]
+        ys = [float(v) for v in data.get("20", [])]
+        n = len(xs)
+        bulges = [float(v) for v in data.get("42", [])]
+        if len(bulges) < n:               # pad missing bulges with 0 (straight)
+            bulges = bulges + [0.0] * (n - len(bulges))
+        verts = list(zip(xs, ys, bulges))
+        return _polyline_vertices_to_segments(verts)
     if etype == "CIRCLE":
         return [{"type": "circle", "xc": _f(data, "10"), "yc": _f(data, "20"), "r": _f(data, "40")}]
     if etype == "ARC":
@@ -302,6 +311,59 @@ def _loops_pfix(loops, bbox, angle_tol=5.0):
         return []
     arr = np.unique(np.asarray(pfix, dtype=float), axis=0)
     return arr.tolist()
+
+
+def _tessellate_segment(seg, n=64):
+    """Convert any segment into a polyline segment (tessellate_curves mode)."""
+    if seg["type"] == "polyline":
+        return seg
+    pts = np.asarray(_segment_points(seg, n), dtype=float)
+    closed = seg["type"] in {"circle", "ellipse"} or seg.get("closed", False)
+    if closed and len(pts) > 1 and np.linalg.norm(pts[0] - pts[-1]) > 1e-9:
+        pts = np.vstack([pts, pts[0]])
+    return {"type": "polyline", "points": [tuple(p) for p in pts], "closed": closed}
+
+
+def dxf_to_domain(file_path, tessellate_curves=False, detect_fixed_points=True, name=None):
+    """
+    Import a DXF file as a mesh-ready :class:`pyPolyMesher.Domain`.
+
+    Parses LINE, LWPOLYLINE, POLYLINE (with bulge arcs), CIRCLE, ARC, ELLIPSE,
+    and SPLINE entities, chains them into closed loops, detects holes by
+    containment parity, auto-computes the bounding box, and builds the signed
+    distance function. INSERT (block reference) entities are skipped with a
+    warning (hand-authored DXFs only; block expansion is future work).
+
+    Parameters:
+        file_path (str): Path to the DXF file.
+        tessellate_curves (bool): If True, sample every curve into polylines and
+            build the SDF from polygonal loops only (the robust fallback).
+            Default False uses exact arc/circle/ellipse primitives.
+        detect_fixed_points (bool): If True, seed ``Domain.PFix`` at sharp and
+            re-entrant corners to improve mesh quality. Default True.
+        name (str, optional): Domain name. Defaults to the file stem.
+
+    Returns:
+        pyPolyMesher.Domain: A domain ready for ``PolyMesher(domain, ...)``.
+
+    Raises:
+        ValueError: If no supported geometry is found or a loop cannot be closed.
+    Warns:
+        UserWarning: If INSERT entities are present.
+    """
+    from pyPolyMesher.pyPolyMesher import Domain
+
+    loops = dxf_extract_geometry(file_path)
+    if tessellate_curves:
+        loops = [[_tessellate_segment(seg) for seg in loop] for loop in loops]
+    bbox = _loops_bbox(loops)
+
+    def SDF(P):
+        return dLoop(P, loops)
+
+    pfix = _loops_pfix(loops, bbox) if detect_fixed_points else []
+    dom_name = name if name is not None else Path(file_path).stem
+    return Domain(dom_name, bbox, SDF, PFix=pfix)
 
 
 _NON_GEOMETRY = {"HATCH", "TEXT", "MTEXT", "POINT", "DIMENSION", "LEADER", "SOLID",

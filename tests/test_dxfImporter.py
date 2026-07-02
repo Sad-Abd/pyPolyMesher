@@ -1,10 +1,12 @@
 from pathlib import Path
 
 import math
+import numpy as np
 import pytest
 
 from pyPolyMesher.dxfImporter import (
     dxf_polygon,
+    dxf_to_domain,
     dxf_extract_geometry,
     _entity_to_segments,
     _bulge_to_arc,
@@ -237,3 +239,69 @@ def test_loops_pfix_l_shape_has_reentrant_seeds():
     loop = [{"type": "polyline", "points": pts + [pts[0]], "closed": True}]
     pfix = _loops_pfix([loop], [0, 3, 0, 3])
     assert len(pfix) >= 3  # re-entrant corner at (1,1) contributes 3 seeds
+
+
+def test_dxf_to_domain_circle_sdf_and_bbox(tmp_path):
+    path = tmp_path / "c.dxf"
+    path.write_text("\n".join([
+        "0", "SECTION", "2", "ENTITIES",
+        "0", "CIRCLE", "10", "5", "20", "5", "40", "2",
+        "0", "ENDSEC", "0", "EOF",
+    ]))
+    dom = dxf_to_domain(str(path))
+    assert dom.name == "c"
+    assert dom.BdBox[0] <= 3 and dom.BdBox[1] >= 7
+    P = np.array([[5, 5], [5, 7], [10, 10]])
+    sdf = dom.SDF(P)
+    assert sdf[0, -1] < 0  # center inside
+    assert abs(sdf[1, -1]) < 1e-9  # on boundary
+    assert sdf[2, -1] > 0  # outside
+
+
+def test_dxf_to_domain_rectangle_with_circular_hole(tmp_path):
+    # outer 0..6 square, circular hole at (3,3) r=1
+    path = tmp_path / "rh.dxf"
+    path.write_text("\n".join([
+        "0", "SECTION", "2", "ENTITIES",
+        "0", "LINE", "10", "0", "20", "0", "11", "6", "21", "0",
+        "0", "LINE", "10", "6", "20", "0", "11", "6", "21", "6",
+        "0", "LINE", "10", "6", "20", "6", "11", "0", "21", "6",
+        "0", "LINE", "10", "0", "20", "6", "11", "0", "21", "0",
+        "0", "CIRCLE", "10", "3", "20", "3", "40", "1",
+        "0", "ENDSEC", "0", "EOF",
+    ]))
+    dom = dxf_to_domain(str(path), detect_fixed_points=False)
+    P = np.array([[3, 3], [0.5, 0.5], [7, 7]])
+    sdf = dom.SDF(P)
+    assert sdf[0, -1] > 0   # in the hole -> outside domain
+    assert sdf[1, -1] < 0   # in the solid ring
+    assert sdf[2, -1] > 0   # outside everything
+
+
+def test_dxf_to_domain_lwpolyline_with_bulge_fillet(tmp_path):
+    # square with a 90deg fillet written as LWPOLYLINE with a bulge
+    path = tmp_path / "f.dxf"
+    path.write_text("\n".join([
+        "0", "SECTION", "2", "ENTITIES",
+        "0", "LWPOLYLINE",
+        "10", "0", "20", "0", "42", "0",
+        "10", "2", "20", "0", "42", "0.4142135623730951",  # 90deg fillet
+        "10", "2", "20", "2", "42", "0",
+        "10", "0", "20", "2", "42", "0",
+        "0", "ENDSEC", "0", "EOF",
+    ]))
+    dom = dxf_to_domain(str(path), detect_fixed_points=False)
+    P = np.array([[1, 1], [5, 5]])
+    sdf = dom.SDF(P)
+    assert sdf[0, -1] < 0
+    assert sdf[1, -1] > 0
+
+
+def test_entity_to_segments_lwpolyline_with_bulge():
+    data = {"10": ["0", "2", "2", "0"], "20": ["0", "0", "2", "2"], "42": ["0", "0.4142135623730951", "0", "0"]}
+    segs = _entity_to_segments("LWPOLYLINE", data)
+    assert len(segs) == 4
+    assert segs[0]["type"] == "line"
+    assert segs[1]["type"] == "arc"
+    assert segs[2]["type"] == "line"
+    assert segs[3]["type"] == "line"
