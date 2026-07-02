@@ -1,8 +1,14 @@
 from pathlib import Path
 
+import math
 import pytest
 
-from pyPolyMesher.dxfImporter import dxf_polygon
+from pyPolyMesher.dxfImporter import (
+    dxf_polygon,
+    _entity_to_segments,
+    _bulge_to_arc,
+    _polyline_vertices_to_segments,
+)
 
 
 EXAMPLES_DIR = Path(__file__).resolve().parents[1] / "examples"
@@ -104,3 +110,40 @@ def test_dxf_polygon_lwpolyline_with_bulge_is_backward_compatible(tmp_path):
     )
     vertices = dxf_polygon(str(path))
     assert vertices == [(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)]
+
+
+def test_bulge_to_arc_half_circle():
+    # bulge = 1 -> included angle 180 deg; chord (0,0)->(2,0), bulge>0 -> ccw, center (1,0), r=1
+    seg = _bulge_to_arc((0.0, 0.0), (2.0, 0.0), 1.0)
+    assert seg["type"] == "arc"
+    assert math.isclose(seg["xc"], 1.0, abs_tol=1e-9)
+    assert math.isclose(seg["yc"], 0.0, abs_tol=1e-9)
+    assert math.isclose(seg["r"], 1.0, abs_tol=1e-9)
+    assert seg["ccw"] is True
+
+
+def test_bulge_zero_is_line():
+    seg = _bulge_to_arc((0.0, 0.0), (2.0, 0.0), 0.0)
+    assert seg["type"] == "line"
+
+
+def test_entity_to_segments_circle():
+    segs = _entity_to_segments("CIRCLE", {"10": ["5"], "20": ["5"], "40": ["2"]})
+    assert segs == [{"type": "circle", "xc": 5.0, "yc": 5.0, "r": 2.0}]
+
+
+def test_entity_to_segments_arc():
+    segs = _entity_to_segments("ARC", {"10": ["0"], "20": ["0"], "40": ["2"], "50": ["0"], "51": ["1.5707963267948966"]})
+    assert segs[0]["type"] == "arc"
+    assert math.isclose(segs[0]["start_angle"], 0.0)
+    assert math.isclose(segs[0]["end_angle"], math.pi / 2)
+    assert segs[0]["ccw"] is True
+
+
+def test_polyline_vertices_to_segments_with_bulge():
+    verts = [(0.0, 0.0, 0.0), (2.0, 0.0, 1.0), (2.0, 2.0, 0.0), (0.0, 2.0, 0.0)]
+    segs = _polyline_vertices_to_segments(verts)
+    assert segs[0]["type"] == "line"
+    assert segs[1]["type"] == "arc"
+    assert segs[2]["type"] == "line"
+    assert segs[3]["type"] == "line"
