@@ -54,7 +54,7 @@
         <li><a href="#basic-usage">Basic Usage</a></li>
         <li><a href="#internal-sdfs">Internal SDFs</a></li>
         <li><a href="#example-domains">Example Domains</a></li>
-        <li><a href="#import-polygon-domain-from-dxf">Import Polygon Domain from DXF</a></li>
+        <li><a href="#import-diverse-geometries-from-dxf">Import Diverse Geometries from DXF</a></li>
         <li><a href="#custom-domain-heart-example">Custom Domain: Heart Example</a></li>
       </ol>
     </li>
@@ -171,30 +171,28 @@ from pyPolyMesher import dFunctions as DF
 </details>
 
 
-### Import Polygon Domain from DXF:
+### Import Diverse Geometries from DXF
+
+`dxf_to_domain` imports a hand-authored DXF (LINE, LWPOLYLINE/POLYLINE with bulge arcs, CIRCLE, ARC, ELLIPSE, SPLINE) directly into a mesh-ready `Domain`. It auto-computes the bounding box, detects holes by containment parity, and builds the signed distance function from exact arc/circle/ellipse primitives (splines and partial ellipses are tessellated). `INSERT` (block reference) entities are skipped with a warning — block expansion is on the roadmap.
 
 ```python
-from pyPolyMesher import PolyMesher, Domain, mesh_assessment
-from pyPolyMesher.dxfImporter import dxf_polygon
-from pyPolyMesher.dFunctions import dPolygon
+from pyPolyMesher import PolyMesher, mesh_assessment, dxf_to_domain
 
-dxf_file_path = 'examples/polygon1.dxf'
-v = dxf_polygon(dxf_file_path)
-
-SDF = lambda P: dPolygon(P, v)
-dxfDomain = Domain("DXF Polygon Domain", [0,100,0,100], SDF)
-dxfDomain.Plot()
+dom = dxf_to_domain('examples/polygon1.dxf')
+dom.Plot()
 ```
 
 ![polygon_dxf](images/polygon_dxf.png)
 
 ```python
-Node, Element, Supp, Load, P = PolyMesher(dxfDomain, 50, 100)
+Node, Element, Supp, Load, P = PolyMesher(dom, 50, 100)
 
-area = dxfDomain.CalculateArea()
+area = dom.CalculateArea()
 metrics = mesh_assessment(Node, Element, area, verbose = True)
 ```
 ![polygon_dxf_mesh](images/polygon_dxf_mesh.png)
+
+For a robust pure-polyline fallback (sample every curve into line segments), pass `tessellate_curves=True`. The new SDF primitives `dArc`, `dSpline`, and `dLoop` are also exported from `pyPolyMesher` for building domains by hand without DXF.
 
 It should be noted that the `CalculateArea` method calculates the approximate area of the domain using the Monte Carlo method. 
 
@@ -242,9 +240,10 @@ See [Examples.py](examples/Examples.py) and [Example Notebook](examples/Examples
 
 1. Define `Domain` from `dxf` files
     * ~~Polygon importer~~
-    * Circle importer
-    * Spline importer
-    * Automatic SDF for geometries
+    * ~~Circle importer~~
+    * ~~Spline importer~~
+    * ~~Automatic SDF for geometries~~
+    * [ ] DXF `INSERT`/block expansion: resolve block references with scale/rotation/translation (currently skipped with a warning)
 2. Add mesh quality assessments
     * ~~Aspect Ratio~~
     * ~~Standard Deviation of Elements Areas~~
