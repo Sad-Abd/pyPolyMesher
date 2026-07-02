@@ -9,6 +9,8 @@ from pyPolyMesher.dxfImporter import (
     _entity_to_segments,
     _bulge_to_arc,
     _polyline_vertices_to_segments,
+    _loops_bbox,
+    _loops_pfix,
 )
 
 
@@ -208,3 +210,30 @@ def test_dxf_extract_geometry_no_geometry_raises(tmp_path):
     path.write_text("\n".join(["0", "SECTION", "2", "ENTITIES", "0", "ENDSEC", "0", "EOF"]))
     with pytest.raises(ValueError, match="No supported geometry"):
         dxf_extract_geometry(str(path))
+
+
+def test_loops_bbox_unit_square():
+    loop = [
+        {"type": "line", "p1": (0, 0), "p2": (1, 0)},
+        {"type": "line", "p1": (1, 0), "p2": (1, 1)},
+        {"type": "line", "p1": (1, 1), "p2": (0, 1)},
+        {"type": "line", "p1": (0, 1), "p2": (0, 0)},
+    ]
+    bbox = _loops_bbox([loop])
+    assert bbox[0] <= 0 and bbox[1] >= 1
+    assert bbox[2] <= 0 and bbox[3] >= 1
+
+
+def test_loops_bbox_circle():
+    loop = [{"type": "circle", "xc": 5, "yc": 5, "r": 2}]
+    bbox = _loops_bbox([loop])
+    assert bbox[0] <= 3 and bbox[1] >= 7
+    assert bbox[2] <= 3 and bbox[3] >= 7
+
+
+def test_loops_pfix_l_shape_has_reentrant_seeds():
+    # L-shape polygon vertices (CW): (0,0),(0,3),(1,3),(1,1),(3,1),(3,0)
+    pts = [(0, 0), (0, 3), (1, 3), (1, 1), (3, 1), (3, 0)]
+    loop = [{"type": "polyline", "points": pts + [pts[0]], "closed": True}]
+    pfix = _loops_pfix([loop], [0, 3, 0, 3])
+    assert len(pfix) >= 3  # re-entrant corner at (1,1) contributes 3 seeds

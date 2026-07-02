@@ -228,6 +228,82 @@ def _chain_loops(segments, tol=1e-6):
     return loops
 
 
+def _loops_bbox(loops, pad_frac=0.02):
+    """Auto bounding box [xmin, xmax, ymin, ymax] from all loop geometry, padded."""
+    xs, ys = [], []
+    for loop in loops:
+        for seg in loop:
+            pts = np.asarray(_segment_points(seg), dtype=float)
+            xs.extend(pts[:, 0].tolist())
+            ys.extend(pts[:, 1].tolist())
+    xmin, xmax = min(xs), max(xs)
+    ymin, ymax = min(ys), max(ys)
+    pad = pad_frac * max(xmax - xmin, ymax - ymin, 1e-9)
+    return [xmin - pad, xmax + pad, ymin - pad, ymax + pad]
+
+
+def _signed_area(poly):
+    a = 0.0
+    n = len(poly)
+    for i in range(n):
+        x1, y1 = poly[i]
+        x2, y2 = poly[(i + 1) % n]
+        a += (x2 - x1) * (y2 + y1)
+    return a  # <0 for standard CCW, >0 for standard CW (this formula = -2 x standard signed area)
+
+
+def _loop_polygon_dxf(loop):
+    """Local alias for dFunctions._loop_polygon to avoid name shadowing."""
+    from pyPolyMesher.dFunctions import _loop_polygon
+    return _loop_polygon(loop)
+
+
+def _loops_pfix(loops, bbox, angle_tol=5.0):
+    """
+    Fixed-point seeds at sharp loop corners. Convex sharp corners contribute the
+    corner point itself; re-entrant (concave) corners contribute the three
+    reentrant_corner_seeds from Talischi et al. (2012).
+    """
+    from pyPolyMesher.pyPolyMesher import reentrant_corner_seeds
+
+    diag = np.hypot(bbox[1] - bbox[0], bbox[3] - bbox[2])
+    delta = 0.03 * diag
+    angle_tol_rad = np.radians(angle_tol)
+    pfix = []
+    for loop in loops:
+        poly = [tuple(p) for p in _loop_polygon_dxf(loop)]
+        if len(poly) < 3:
+            continue
+        ccw = _signed_area(poly) < 0  # standard convention: <0 = CCW
+        n = len(poly)
+        for i in range(n):
+            prev = np.asarray(poly[(i - 1) % n], dtype=float)
+            cur = np.asarray(poly[i], dtype=float)
+            nxt = np.asarray(poly[(i + 1) % n], dtype=float)
+            e_in = cur - prev
+            e_out = nxt - cur
+            lin = np.linalg.norm(e_in)
+            lout = np.linalg.norm(e_out)
+            if lin < 1e-12 or lout < 1e-12:
+                continue
+            cos_t = np.dot(e_in, e_out) / (lin * lout)
+            turn = np.arccos(np.clip(cos_t, -1.0, 1.0))
+            if turn < angle_tol_rad:
+                continue
+            cross = e_in[0] * e_out[1] - e_in[1] * e_out[0]
+            concave = (cross < 0) if ccw else (cross > 0)
+            if concave:
+                e1 = -e_in / lin       # wall direction back along incoming edge
+                e2 = e_out / lout      # wall direction along outgoing edge
+                pfix.extend(reentrant_corner_seeds(cur, e1, e2, delta))
+            else:
+                pfix.append([float(cur[0]), float(cur[1])])
+    if not pfix:
+        return []
+    arr = np.unique(np.asarray(pfix, dtype=float), axis=0)
+    return arr.tolist()
+
+
 _NON_GEOMETRY = {"HATCH", "TEXT", "MTEXT", "POINT", "DIMENSION", "LEADER", "SOLID",
                  "3DFACE", "ATTRIB", "ATTDEF", "VERTEX", "SEQEND"}
 
