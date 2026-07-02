@@ -305,3 +305,23 @@ def test_entity_to_segments_lwpolyline_with_bulge():
     assert segs[1]["type"] == "arc"
     assert segs[2]["type"] == "line"
     assert segs[3]["type"] == "line"
+
+
+def test_dxf_to_domain_tessellate_matches_exact_within_tol(tmp_path):
+    # tessellate_curves=True must agree with the exact primitives in sign and
+    # magnitude (within tessellation tolerance) at clearly-signed probe points
+    # (points exactly ON the boundary are avoided: sign(0) vs sign(+epsilon)
+    # would be a degenerate comparison for an inscribed polygon).
+    path = tmp_path / "c.dxf"
+    path.write_text("\n".join([
+        "0", "SECTION", "2", "ENTITIES",
+        "0", "CIRCLE", "10", "5", "20", "5", "40", "2",
+        "0", "ENDSEC", "0", "EOF",
+    ]))
+    dom_exact = dxf_to_domain(str(path), tessellate_curves=False, detect_fixed_points=False)
+    dom_tess = dxf_to_domain(str(path), tessellate_curves=True, detect_fixed_points=False)
+    P = np.array([[5, 5], [5, 6.5], [5, 7.5], [10, 10]])
+    e = dom_exact.SDF(P)[:, -1]
+    t = dom_tess.SDF(P)[:, -1]
+    assert np.all(np.sign(e) == np.sign(t))
+    np.testing.assert_allclose(np.abs(t), np.abs(e), atol=0.2)
