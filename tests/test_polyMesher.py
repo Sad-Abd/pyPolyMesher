@@ -179,3 +179,19 @@ def test_mesh_assessment_reports_expected_keys_and_values(capsys):
     out = capsys.readouterr().out
     assert "Max. Mesh AR:" in out
     assert "Total Area Error (%)" in out
+
+
+@pytest.mark.parametrize("seed", [0, 1, 2, 3])
+def test_fixed_points_survive_edge_collapse(seed):
+    """Pinned corners must remain exact mesh nodes (regression: PolyMshr_CllpsEdgs
+    used to merge the corner node away when its adjacent edge was collapsed)."""
+    sdf = lambda P: dRectangle(P, 10, 80, 20, 90)
+    pfix = [[10.0, 20.0], [80.0, 20.0]]
+    dom = Domain("pinned-square", [10, 80, 20, 90], sdf, PFix=pfix)
+    np.random.seed(seed)
+    Node, Element, Supp, Load, P = PolyMesher(dom, 150, 60)
+    for pf in pfix:
+        d = np.linalg.norm(Node - np.asarray(pf, dtype=float), axis=1)
+        assert d.min() == pytest.approx(0.0, abs=1e-6), (
+            f"no mesh node at pinned corner {pf} (closest {d.min():.4f})"
+        )

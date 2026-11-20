@@ -505,6 +505,19 @@ def PolyMesher(Domain, NElem, MaxIter, P=None, anim=False, snap_boundary=True):
             # nodes / 2 colinear edges on one wall). Drop such redundant nodes.
             Node, Element = PolyMshr_RmvCollinearNds(Node, Element)
 
+    # Ensure every fixed point is an exact mesh node. PolyMshr_FixedPoints only
+    # attracts a seed toward each fixed point, and the edge-collapse step above
+    # can merge the resulting corner node away (the corner's Voronoi vertex is
+    # degenerate and its adjacent edge is often collapsible). Re-pin by moving
+    # the nearest node onto each fixed point so pinned corners stay exact.
+    if PFix.size:
+        elem_size = np.sqrt((BdBox[1] - BdBox[0]) * (BdBox[3] - BdBox[2]) / NElem)
+        for pf in PFix:
+            d = np.linalg.norm(Node - pf, axis=1)
+            i = int(np.argmin(d))
+            if 0 < d[i] <= elem_size:
+                Node[i] = pf
+
     BC = Domain.BndryCnds(Node)
     Supp = BC[0]
     Load = BC[1]
