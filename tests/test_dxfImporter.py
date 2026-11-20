@@ -20,7 +20,7 @@ EXAMPLES_DIR = Path(__file__).resolve().parents[1] / "examples"
 
 
 def test_example_dxf_assets_exist_and_are_readable():
-    for name in ["circle.dxf", "polygon1.dxf", "__plg6.dxf"]:
+    for name in ["dxf_lines_circle.dxf", "polygon1.dxf", "dxf_polygon20.dxf"]:
         path = EXAMPLES_DIR / name
         assert path.is_file()
         assert path.read_text().strip()
@@ -138,7 +138,7 @@ def test_entity_to_segments_circle():
 
 
 def test_entity_to_segments_arc():
-    segs = _entity_to_segments("ARC", {"10": ["0"], "20": ["0"], "40": ["2"], "50": ["0"], "51": ["1.5707963267948966"]})
+    segs = _entity_to_segments("ARC", {"10": ["0"], "20": ["0"], "40": ["2"], "50": ["0"], "51": ["90"]})  # 50/51 are degrees per DXF spec
     assert segs[0]["type"] == "arc"
     assert math.isclose(segs[0]["start_angle"], 0.0)
     assert math.isclose(segs[0]["end_angle"], math.pi / 2)
@@ -279,11 +279,12 @@ def test_dxf_to_domain_rectangle_with_circular_hole(tmp_path):
 
 
 def test_dxf_to_domain_lwpolyline_with_bulge_fillet(tmp_path):
-    # square with a 90deg fillet written as LWPOLYLINE with a bulge
+    # square with a 90deg fillet written as LWPOLYLINE with a bulge (closed flag set)
     path = tmp_path / "f.dxf"
     path.write_text("\n".join([
         "0", "SECTION", "2", "ENTITIES",
         "0", "LWPOLYLINE",
+        "70", "1",
         "10", "0", "20", "0", "42", "0",
         "10", "2", "20", "0", "42", "0.4142135623730951",  # 90deg fillet
         "10", "2", "20", "2", "42", "0",
@@ -298,7 +299,7 @@ def test_dxf_to_domain_lwpolyline_with_bulge_fillet(tmp_path):
 
 
 def test_entity_to_segments_lwpolyline_with_bulge():
-    data = {"10": ["0", "2", "2", "0"], "20": ["0", "0", "2", "2"], "42": ["0", "0.4142135623730951", "0", "0"]}
+    data = {"10": ["0", "2", "2", "0"], "20": ["0", "0", "2", "2"], "42": ["0", "0.4142135623730951", "0", "0"], "70": ["1"]}  # closed square
     segs = _entity_to_segments("LWPOLYLINE", data)
     assert len(segs) == 4
     assert segs[0]["type"] == "line"
@@ -383,11 +384,12 @@ def test_dxf_to_domain_circle_meshes_cleanly_with_pfix(tmp_path):
 
 def test_dxf_to_domain_arc_fillet_meshes_cleanly(tmp_path):
     from pyPolyMesher import PolyMesher, assess_nodes_outside_domain
-    # square with a 90deg fillet (arc via bulge) meshed through PolyMesher
+    # square with a 90deg fillet (arc via bulge) meshed through PolyMesher (closed flag set)
     path = tmp_path / "f.dxf"
     path.write_text("\n".join([
         "0", "SECTION", "2", "ENTITIES",
         "0", "LWPOLYLINE",
+        "70", "1",
         "10", "0", "20", "0", "42", "0",
         "10", "2", "20", "0", "42", "0.4142135623730951",
         "10", "2", "20", "2", "42", "0",

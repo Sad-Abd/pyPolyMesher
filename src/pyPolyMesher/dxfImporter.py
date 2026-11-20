@@ -84,11 +84,13 @@ def _bulge_to_arc(p1, p2, bulge):
             "start_angle": float(start_angle), "end_angle": float(end_angle), "ccw": bulge > 0}
 
 
-def _polyline_vertices_to_segments(verts):
-    """Convert a list of (x, y, bulge) vertices into edge segments (closed ring)."""
+def _polyline_vertices_to_segments(verts, closed=True):
+    """Convert a list of (x, y, bulge) vertices into edge segments."""
     segs = []
     n = len(verts)
     for i in range(n):
+        if i + 1 == n and not closed:
+            break  # open polyline: no closing edge beyond last vertex
         x1, y1, b1 = verts[i]
         x2, y2, _ = verts[(i + 1) % n]
         segs.append(_bulge_to_arc((x1, y1), (x2, y2), b1))
@@ -109,12 +111,13 @@ def _entity_to_segments(etype, data):
         if len(bulges) < n:               # pad missing bulges with 0 (straight)
             bulges = bulges + [0.0] * (n - len(bulges))
         verts = list(zip(xs, ys, bulges))
-        return _polyline_vertices_to_segments(verts)
+        closed = bool(int(float(data.get("70", ["0"])[0])))  # bit 0 = closed flag
+        return _polyline_vertices_to_segments(verts, closed=closed)
     if etype == "CIRCLE":
         return [{"type": "circle", "xc": _f(data, "10"), "yc": _f(data, "20"), "r": _f(data, "40")}]
     if etype == "ARC":
         return [{"type": "arc", "xc": _f(data, "10"), "yc": _f(data, "20"), "r": _f(data, "40"),
-                 "start_angle": _f(data, "50"), "end_angle": _f(data, "51"), "ccw": True}]
+                 "start_angle": np.radians(_f(data, "50")), "end_angle": np.radians(_f(data, "51")), "ccw": True}]
     if etype == "ELLIPSE":
         xc, yc = _f(data, "10"), _f(data, "20")
         mx, my = _f(data, "11"), _f(data, "21")          # major-axis endpoint vector
@@ -135,7 +138,7 @@ def _entity_to_segments(etype, data):
         ctrl = list(zip(xs, ys))
         knots = [float(v) for v in data.get("40", [])] or None
         weights = [float(v) for v in data.get("41", [])] or None
-        closed = bool(int(float(data.get("73", ["0"])[0])))
+        closed = (int(float(data.get("70", ["0"])[0])) & 1) != 0  # bit 0 = closed flag
         return [{"type": "spline", "ctrl": ctrl, "degree": degree, "knots": knots, "weights": weights, "closed": closed}]
     return []
 
@@ -408,6 +411,7 @@ def dxf_extract_geometry(file_path):
             continue
         if etype == "POLYLINE":
             verts = []
+            closed = bool(int(float(data.get("70", ["0"])[0])))  # bit 0 = closed flag
             i += 1
             while i < len(entities) and entities[i][0] != "SEQEND":
                 if entities[i][0] == "VERTEX":
@@ -416,7 +420,7 @@ def dxf_extract_geometry(file_path):
                 i += 1
             i += 1  # skip SEQEND
             if verts:
-                segments.extend(_polyline_vertices_to_segments(verts))
+                segments.extend(_polyline_vertices_to_segments(verts, closed=closed))
             continue
         segs = _entity_to_segments(etype, data)
         if segs:
