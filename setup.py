@@ -5,7 +5,7 @@ with open("README.md", "r", encoding = "utf-8") as fh:
 
 setup(
     name="PolyMesher",
-    version="1.3",
+    version="1.4",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
     author="Sad-Abd",
@@ -18,8 +18,7 @@ setup(
     install_requires=[
         "numpy",
         "scipy",
-        "matplotlib",
-        "ezdxf"
+        "matplotlib"
     ],
     classifiers=[
         "Programming Language :: Python :: 3",

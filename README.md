@@ -60,7 +60,7 @@
     </li>
     <li><a href="#roadmap">Roadmap</a></li>
     <li><a href="#contributing">Contributing</a></li>
-    <li><a href="#v13-release-notes">Release Notes</a></li>
+    <li><a href="#v14-release-notes">Release Notes</a></li>
     <li><a href="#publications-using-pypolymesher">Publications</a></li>
     <li><a href="#license">License</a></li>
     <li><a href="#contact">Contact</a></li>
@@ -275,6 +275,31 @@ Contributions are what make the open source community such an amazing place to l
 
 If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement".
 We appreciate your interest in pyPolyMesher!. Don't forget to give the project a star! Thanks again!
+
+## v1.4 Release Notes
+
+This release adds full DXF-based domain import, so polygonal meshes can be
+generated directly from CAD drawings:
+
+- Added `dxf_to_domain()`: imports DXF entities (LINE, LWPOLYLINE/POLYLINE with
+  bulge arcs, CIRCLE, ARC, ELLIPSE, SPLINE) into a mesh-ready `Domain`, with an
+  auto-computed bounding box, parity-based hole detection, and automatic fixed
+  points at sharp/re-entrant corners.
+- Added `tessellate_curves=True` fallback that samples every curve into line
+  segments for robust meshing of complex drawings.
+- Added signed distance primitives `dArc`, `dSpline`, and `dLoop` (exported from
+  `pyPolyMesher`) for building curved domains by hand, without DXF.
+- Fixed ARC angle handling (DXF stores degrees; SDFs use radians) and polyline
+  closed/open handling via the group-code-70 flag.
+- `Domain.CalculateArea` now computes in chunks, keeping memory bounded on
+  large point sets.
+- `PolyMesher`'s final mesh plot is non-blocking, so scripts no longer hang on
+  the plot window at the end of a run.
+- Expanded the test suite to 139 tests, including a DXF fixture set covering
+  every supported entity type, each meshed end-to-end.
+- Dropped the unused `ezdxf` dependency; the DXF parser is fully self-contained.
+- Known limitation: `INSERT` (block reference) entities are skipped with a
+  warning; block expansion remains on the roadmap.
 
 ## v1.3 Release Notes
 
