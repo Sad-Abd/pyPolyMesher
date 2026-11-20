@@ -291,6 +291,9 @@ generated directly from CAD drawings:
   `pyPolyMesher`) for building curved domains by hand, without DXF.
 - Fixed ARC angle handling (DXF stores degrees; SDFs use radians) and polyline
   closed/open handling via the group-code-70 flag.
+- Fixed points (`PFix`) are now guaranteed to be exact mesh nodes: the final
+  post-processing re-pins the nearest node onto each fixed point, so pinned
+  corners no longer drift away stochastically during edge collapse.
 - `Domain.CalculateArea` now computes in chunks, keeping memory bounded on
   large point sets.
 - `PolyMesher`'s final mesh plot is non-blocking, so scripts no longer hang on
