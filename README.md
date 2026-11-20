@@ -13,7 +13,7 @@
 
 <br />
 <div align="center">
-  <a href="https://github.com/Sad-Abd/pyPolyMehser">
+  <a href="https://github.com/Sad-Abd/pyPolyMesher">
     <img src="images/Logo.png" alt="Logo" width="426" height="272">
   </a>
 
@@ -22,14 +22,14 @@
   <p align="center">
     Generation of polygonal Mesh
     <br />
-    <a href="https://github.com/Sad-Abd/pyPolyMehser"><strong>Explore the docs »</strong></a>
+    <a href="https://github.com/Sad-Abd/pyPolyMesher"><strong>Explore the docs »</strong></a>
     <br />
     <br />
-    <a href="https://github.com/Sad-Abd/pyPolyMehser">View Demo</a>
+    <a href="https://github.com/Sad-Abd/pyPolyMesher">View Demo</a>
     ·
-    <a href="https://github.com/Sad-Abd/pyPolyMehser/issues">Report Bug</a>
+    <a href="https://github.com/Sad-Abd/pyPolyMesher/issues">Report Bug</a>
     ·
-    <a href="https://github.com/Sad-Abd/pyPolyMehser/issues">Request Feature</a>
+    <a href="https://github.com/Sad-Abd/pyPolyMesher/issues">Request Feature</a>
     ·
     <a href="#publications-using-pypolymesher">Citations</a>
   </p>
@@ -60,6 +60,8 @@
     </li>
     <li><a href="#roadmap">Roadmap</a></li>
     <li><a href="#contributing">Contributing</a></li>
+    <li><a href="#v13-release-notes">Release Notes</a></li>
+    <li><a href="#publications-using-pypolymesher">Publications</a></li>
     <li><a href="#license">License</a></li>
     <li><a href="#contact">Contact</a></li>
   </ol>
@@ -115,7 +117,7 @@ Please note that `pyPolyMesher` is published as `PolyMesher` on PYPI.
 
 ### Basic Usage:
 
-`pyPolyMesher.PolyMesher(Domain, NElem, MaxIter, P=None, anim=False)`: Generate polygon mesh on `Domain` with `NElem` number of elements. Improve mesh for `MaxIter` iterations. Can be given an initial point set `P`. 
+`pyPolyMesher.PolyMesher(Domain, NElem, MaxIter, P=None, anim=False, snap_boundary=True)`: Generate polygon mesh on `Domain` with `NElem` number of elements. Improve mesh for `MaxIter` iterations. Can be given an initial point set `P`. With `snap_boundary=True` (default), boundary nodes are snapped onto the exact domain boundary after meshing (see [Boundary Accuracy](#boundary-accuracy-and-non-convex-corners)).
 
 ```python
 import pyPolyMesher
@@ -139,6 +141,9 @@ from pyPolyMesher import dFunctions as DF
 9. `DF.dUnion(d1, d2)`: Calculate the signed distance field resulting from the union of two distance fields (d1 and d2).
 10. `DF.dIntersect(d1, d2)`: Calculate the signed distance field resulting from the intersection of two distance fields (d1 and d2).
 11. `DF.dDiff(d1, d2)`: Calculate the signed distance field resulting from the difference of two distance fields (d1 and d2).
+12. `DF.dArc(P, xc, yc, r, start_angle, end_angle, ccw=True)`: Calculate the signed distance from points P to a circular arc defined by its center (xc, yc), radius (r), and angular range [start_angle, end_angle] in radians (`ccw` selects the arc direction).
+13. `DF.dSpline(P, control_points, degree=3, knots=None, weights=None, n_samples=None, closed=False)`: Calculate the signed distance from points P to a B-spline curve defined by its control points (optionally with custom knots, weights, and closed rings).
+14. `DF.dLoop(P, loops)`: Calculate the signed distance from points P to one or more closed loops of segments (mixed lines/arcs/splines), as produced by the DXF importer.
 
 ### Example Domains:
 <details>
@@ -249,7 +254,7 @@ See [Examples.py](examples/Examples.py) and [Example Notebook](examples/Examples
     * ~~Standard Deviation of Elements Areas~~
 
 ### Section 2 - Upcoming Priorities
-1. Enhance the **README** with more detailed information.
+1. ~~Enhance the **README** with more detailed information.~~
 2. ~~Publish the package on *PYPI* and *Zenodo* for wider distribution.~~
 3. ~~Add some tests.~~
 
@@ -310,7 +315,6 @@ This package has been used in the following research:
 ## License
 
 This project is licensed under the GPLv3 License - see the LICENSE file for details.
-Contact
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 

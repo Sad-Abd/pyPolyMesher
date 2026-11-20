@@ -961,6 +961,7 @@ def mesh_assessment(Node, Element, domain_area=0, verbose=True):
     This function calculates the following mesh quality metrics:
     * Maximum aspect ratio (AR) of all elements
     * Average aspect ratio of all elements
+    * Shortest edge length across all elements
     * Average edge length across all elements
     * Range of element areas (minimum and maximum)
     * Standard deviation of element areas
@@ -976,6 +977,7 @@ def mesh_assessment(Node, Element, domain_area=0, verbose=True):
     dict: A dictionary containing the calculated mesh quality metrics.
     - "Max. Mesh AR": Maximum aspect ratio of all elements.
     - "Average Mesh AR": Average aspect ratio of all elements.
+    - "Shortest Length": Shortest edge length across all elements.
     - "Avg. Length": Average edge length across all elements.
     - "Range of Areas": Tuple containing the minimum and maximum element areas.
     - "Standard Deviation of Areas": Standard deviation of element areas.
