@@ -510,9 +510,15 @@ def PolyMesher(Domain, NElem, MaxIter, P=None, anim=False, snap_boundary=True):
     # can merge the resulting corner node away (the corner's Voronoi vertex is
     # degenerate and its adjacent edge is often collapsible). Re-pin by moving
     # the nearest node onto each fixed point so pinned corners stay exact.
+    # Only re-pin points that lie ON the boundary: a fixed point off the
+    # boundary (e.g. stale detection artifacts) would drag a boundary node
+    # outside the domain.
     if PFix.size:
         elem_size = np.sqrt((BdBox[1] - BdBox[0]) * (BdBox[3] - BdBox[2]) / NElem)
-        for pf in PFix:
+        on_bnd = np.abs(np.asarray(Domain.SDF(PFix))[:, -1]) <= 0.01 * elem_size
+        for pf, ok in zip(PFix, on_bnd):
+            if not ok:
+                continue
             d = np.linalg.norm(Node - pf, axis=1)
             i = int(np.argmin(d))
             if 0 < d[i] <= elem_size:

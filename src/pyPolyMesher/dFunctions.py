@@ -249,7 +249,10 @@ def _spline_samples(ctrl, degree, knots, weights, n_samples, closed):
     """Tessellate a B-spline into n_samples points."""
     ctrl = [np.asarray(c, dtype=float) for c in ctrl]
     if n_samples is None:
-        n_samples = max(50, 10 * len(ctrl))
+        # Finer default: the SDF zero set hugs the sampled polyline, so a coarse
+        # tessellation leaves chord-sagitta error in high-curvature regions
+        # (~0.14 units at 60 samples on a typical spline fixture; scales 1/n^2).
+        n_samples = max(120, 25 * len(ctrl))
     if closed:
         u_lo, u_hi = degree - 1, len(ctrl)
         us = np.linspace(u_lo, u_hi, n_samples, endpoint=False)
@@ -377,11 +380,11 @@ def _segment_points(seg, n=64):
     raise ValueError(f"Unknown segment type: {t}")
 
 
-def _loop_polygon(loop):
+def _loop_polygon(loop, n=64):
     """Tessellated polygon vertices of a closed loop (dedup consecutive duplicates)."""
     pts = []
     for seg in loop:
-        sp = np.asarray(_segment_points(seg), dtype=float)
+        sp = np.asarray(_segment_points(seg, n), dtype=float)
         if len(pts) == 0:
             pts.extend([tuple(p) for p in sp])
         else:

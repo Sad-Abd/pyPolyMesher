@@ -264,10 +264,10 @@ def _signed_area(poly):
     return a  # <0 for standard CCW, >0 for standard CW (this formula = -2 x standard signed area)
 
 
-def _loop_polygon_dxf(loop):
+def _loop_polygon_dxf(loop, n=64):
     """Local alias for dFunctions._loop_polygon to avoid name shadowing."""
     from pyPolyMesher.dFunctions import _loop_polygon
-    return _loop_polygon(loop)
+    return _loop_polygon(loop, n)
 
 
 def _loops_pfix(loops, bbox, angle_tol=15.0):
@@ -287,7 +287,11 @@ def _loops_pfix(loops, bbox, angle_tol=15.0):
     angle_tol_rad = np.radians(angle_tol)
     pfix = []
     for loop in loops:
-        poly = [tuple(p) for p in _loop_polygon_dxf(loop)]
+        # Corner detection needs a fine tessellation: at coarse resolution the
+        # chords of a smooth (spline/arc) curve can turn >angle_tol per sample
+        # in high-curvature regions, manufacturing fake "sharp corners".
+        # Genuine corners stay sharp at any resolution.
+        poly = [tuple(p) for p in _loop_polygon_dxf(loop, n=512)]
         if len(poly) < 3:
             continue
         ccw = _signed_area(poly) < 0  # standard convention: <0 = CCW

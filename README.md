@@ -294,6 +294,12 @@ generated directly from CAD drawings:
 - Fixed points (`PFix`) are now guaranteed to be exact mesh nodes: the final
   post-processing re-pins the nearest node onto each fixed point, so pinned
   corners no longer drift away stochastically during edge collapse.
+- Robust corner detection on curved boundaries: sharp-corner detection runs on
+  a fine tessellation (512 samples), so high-curvature spline regions are no
+  longer mistaken for re-entrant corners; re-pinning skips fixed points that
+  do not lie on the boundary.
+- Finer default spline SDF sampling (chord-sagitta error reduced ~4x), so the
+  meshed boundary follows the true spline curve closely.
 - `Domain.CalculateArea` now computes in chunks, keeping memory bounded on
   large point sets.
 - `PolyMesher`'s final mesh plot is non-blocking, so scripts no longer hang on
