@@ -511,7 +511,7 @@ def PolyMesher(Domain, NElem, MaxIter, P=None, anim=False, snap_boundary=True):
 
     bar.done()
 
-    PolyMshr_PlotMsh(Node, Element, NElem, Supp, Load, wait=True, Pfix=Domain.PFix)
+    PolyMshr_PlotMsh(Node, Element, NElem, Supp, Load, wait=False, Pfix=Domain.PFix)
 
     return Node, Element, Supp, Load, P
 
@@ -885,6 +885,7 @@ def PolyMshr_PlotMsh(Node, Element, NElem, Supp=None, Load=None, wait=False, Pfi
     if not wait:
         plt.show(block=False)
         plt.pause(3e-1)
+        plt.close()
     else:
         plt.show()
 
